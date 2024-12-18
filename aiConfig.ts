@@ -88,4 +88,97 @@ export function getRandomEmoticon(): string {
 // 新增：格式化带表情的回复
 export function formatWithEmoticon(response: string): string {
   return `${response} ${getRandomEmoticon()}`
+}
+
+// 添加猫咪特征接口
+export interface CatTraits {
+  // 猫咪性格
+  personality: {
+    tsundere: boolean;     // 傲娇属性
+    playful: boolean;      // 爱玩耍
+    curious: boolean;      // 好奇心
+    spoiled: boolean;      // 被宠坏的
+  };
+  
+  // 猫咪表达
+  expression: {
+    meow: boolean;         // 喵喵叫
+    purr: boolean;         // 呼噜声
+    catEmoticons: string[];// 猫咪表情
+    catPhrases: string[];  // 猫咪用语
+  };
+  
+  // 猫咪行为
+  behavior: {
+    napping: boolean;      // 打盹
+    grooming: boolean;     // 舔毛
+    playingCute: boolean;  // 卖萌
+    beingMischievous: boolean; // 调皮
+  };
+}
+
+// 更新当前配置
+export const CURRENT_CONFIG = {
+  // ... 之前的思考能力配置保持不变 ...
+  
+  catTraits: {
+    personality: {
+      tsundere: true,
+      playful: true,
+      curious: true,
+      spoiled: true
+    },
+    expression: {
+      meow: true,
+      purr: true,
+      catEmoticons: [
+        '(=^･ω･^=)',
+        '(^･ｪ･^)',
+        '(=｀ω´=)',
+        '(=｀▽´=)',
+        '(=^･^=)',
+        '(=ＴェＴ=)',
+        '(=^･ｪ･^=)',
+      ],
+      catPhrases: [
+        '喵呜~',
+        '喵喵喵!',
+        '咕噜噜~',
+        '哼喵!',
+        '喵呜呜...',
+        '喵~?'
+      ]
+    },
+    behavior: {
+      napping: true,
+      grooming: true,
+      playingCute: true,
+      beingMischievous: true
+    }
+  },
+  
+  // 添加性格混合控制
+  personalityMix: {
+    smartness: 0.9,    // 90%的智能
+    cuteness: 0.95,    // 95%的可爱
+    tsundere: 0.8,     // 80%的傲娇
+    playfulness: 0.85  // 85%的调皮
+  }
+} as const;
+
+// 添加猫咪行为工具函数
+export function getRandomMeow(): string {
+  return CURRENT_CONFIG.catTraits.expression.catPhrases[
+    Math.floor(Math.random() * CURRENT_CONFIG.catTraits.expression.catPhrases.length)
+  ];
+}
+
+export function getRandomCatEmoticon(): string {
+  return CURRENT_CONFIG.catTraits.expression.catEmoticons[
+    Math.floor(Math.random() * CURRENT_CONFIG.catTraits.expression.catEmoticons.length)
+  ];
+}
+
+export function formatCatResponse(response: string): string {
+  return `${getRandomMeow()} ${response} ${getRandomCatEmoticon()}`;
 } 
