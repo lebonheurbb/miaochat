@@ -1,27 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 输出模式
-  output: 'standalone',
+  // 静态导出配置
+  output: 'export',
   
-  // 实验性功能
-  experimental: {
-    appDir: true,
-  },
-  
-  // 图片配置
+  // 禁用图片优化
   images: {
-    domains: ['vercel.app'],
     unoptimized: true,
   },
   
-  // 环境变量
-  env: {
-    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001',
+  // 基础路径配置
+  basePath: '',
+  
+  // 关闭严格模式便于调试
+  reactStrictMode: false,
+  
+  // 禁用 webpack 5 的 appDir 功能
+  experimental: {
+    appDir: false,
   },
-
-  // 构建配置
-  reactStrictMode: true,
-  swcMinify: true,
 }
 
-module.exports = nextConfig 
+module.exports = nextConfig
