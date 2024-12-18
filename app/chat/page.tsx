@@ -67,6 +67,10 @@ export default function ChatPage() {
     try {
       const aiResponse = await generateResponse(input.trim())
       
+      if (!aiResponse) {
+        throw new Error('No response from AI')
+      }
+      
       const formattedResponse = aiResponse.split('\n').map(line => 
         line.trim()
       ).filter(line => line).join('\n')

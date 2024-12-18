@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 星空背景动画 */
+/* 暂时注释掉星空背景动画
 @keyframes twinkle {
   from { background-position: 0 0; }
   to { background-position: -10000px 5000px; }
@@ -32,8 +32,9 @@
   z-index: 1;
   animation: twinkle 200s linear infinite;
 }
+*/
 
-/* 消息动画 */
+/* 保留其他样式 */
 @keyframes fadeIn {
   from {
     opacity: 0;
