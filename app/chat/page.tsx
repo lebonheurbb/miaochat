@@ -17,12 +17,30 @@ interface Chat {
   messages: Message[]
 }
 
+// 添加一个动态省略号组件
+const LoadingDots = () => {
+  const [dots, setDots] = useState('');
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, []);
+  
+  return (
+    <span className="inline-block w-16">{dots}</span>
+  );
+};
+
 export default function ChatPage() {
   const [message, setMessage] = useState('')
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showSidebar, setShowSidebar] = useState(true)
   const [chats, setChats] = useState<Chat[]>([])
+  const [greeting, setGreeting] = useState('')
 
   // 获取当前聊天的消息
   const currentMessages = chats.find(chat => chat.id === currentChatId)?.messages || []
@@ -39,6 +57,22 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [currentMessages, isLoading])
+
+  // 监听键盘事件，随机切换欢迎语
+  useEffect(() => {
+    const handleKeyPress = () => {
+      setGreeting(getRandomGreeting())
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    // 初始化欢迎语
+    setGreeting(getRandomGreeting())
+
+    // 清理事件监听
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress)
+    }
+  }, [])
 
   // 创建新对话
   const createNewChat = () => {
@@ -220,90 +254,93 @@ export default function ChatPage() {
         </header>
 
         {/* 聊天区域 */}
-        <div className="flex-1 overflow-auto">
-          <div className="max-w-3xl mx-auto p-4 space-y-8">
-            {currentMessages.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] space-y-6">
+        <div className="flex-1 overflow-auto" style={{ height: 'calc(100vh - 180px)' }}>
+          <div className="max-w-3xl mx-auto h-full">
+            {currentMessages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center">
                 <div className="text-center space-y-4">
                   <h2 className="text-4xl">
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">hong</span>
                     <span className="text-pink-400">，你好</span>
                   </h2>
-                  <p className="text-[#9AA0A6]">{getRandomGreeting()}</p>
+                  <p className="text-[#9AA0A6] transition-all duration-200 ease-in-out">
+                    {greeting}
+                  </p>
                 </div>
               </div>
-            )}
-            {currentMessages.map((msg) => (
-              <div key={msg.id} className="group">
-                <div className="flex items-start space-x-6 px-6">
-                  <div className="w-10 h-10 flex-shrink-0 mt-1">
-                    {msg.role === 'assistant' ? (
-                      <span className="flex items-center justify-center w-10 h-10 bg-[#8AB4F8] rounded-full text-[#1A1B1E] text-base">喵</span>
-                    ) : (
-                      <span className="flex items-center justify-center w-10 h-10 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-base">我</span>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-2">
-                    <div className="text-base text-[#9AA0A6]">
-                      {msg.role === 'assistant' ? AI_CONFIG.name : '我'}
-                    </div>
-                    <div className="text-[#E3E3E3] text-base leading-7 whitespace-pre-wrap">
-                      {msg.content.split('\n').map((paragraph, index) => (
-                        <div 
-                          key={index} 
-                          className={`mb-4 ${
-                            paragraph.startsWith('1.') || 
-                            paragraph.startsWith('2.') || 
-                            paragraph.startsWith('3.') || 
-                            paragraph.startsWith('4.') || 
-                            paragraph.startsWith('5.') || 
-                            paragraph.startsWith('6.') || 
-                            paragraph.startsWith('7.') || 
-                            paragraph.startsWith('8.') 
-                              ? 'pl-4' // 列表项缩进
-                              : ''
-                          }`}
-                        >
-                          {paragraph}
+            ) : (
+              <div className="py-4 space-y-6">
+                {currentMessages.map((msg) => (
+                  <div key={msg.id} className="group">
+                    <div className="flex items-start space-x-6 px-6 py-3">
+                      <div className="flex-shrink-0 mt-1">
+                        {msg.role === 'assistant' ? (
+                          <span className="text-2xl">🐱</span>
+                        ) : (
+                          <span className="flex items-center justify-center w-8 h-8 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-sm">我</span>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <div className="text-[14px] text-[#9AA0A6]">
+                          {msg.role === 'assistant' ? AI_CONFIG.name : '我'}
                         </div>
-                      ))}
+                        <div className="text-[#E3E3E3] text-[16px] leading-7">
+                          {msg.content.split('\n').map((paragraph, index) => (
+                            <div 
+                              key={index} 
+                              className={`${
+                                paragraph.startsWith('•') || paragraph.startsWith('・')
+                                  ? 'pl-6 mb-1.5'
+                                  : paragraph.trim() === '' 
+                                    ? 'h-3'
+                                    : 'mb-2'
+                              }`}
+                            >
+                              {paragraph}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex items-start space-x-4 px-4">
-                <div className="w-8 h-8 flex-shrink-0 mt-1">
-                  <span className="flex items-center justify-center w-8 h-8 bg-[#8AB4F8] rounded-full text-[#1A1B1E] text-sm">喵</span>
-                </div>
-                <div className="flex-1 space-y-1">
-                  <div className="text-sm text-[#9AA0A6]">喵星人</div>
-                  <div className="text-[#9AA0A6]">思考中...</div>
-                </div>
+                ))}
+                {isLoading && (
+                  <div className="flex items-start space-x-6 px-6 py-3">
+                    <div className="flex-shrink-0 mt-1">
+                      <span className="text-2xl animate-bounce">🐱</span>
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <div className="text-[14px] text-[#9AA0A6]">{AI_CONFIG.name}</div>
+                      <div className="text-[#9AA0A6] text-[16px] flex items-center space-x-2">
+                        <span className="animate-pulse">思考中</span>
+                        <LoadingDots />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* 添加一个空的 div 作为滚动目标 */}
+                <div ref={messagesEndRef} />
               </div>
             )}
-            {/* 添加一个空的 div 作为滚动目标 */}
-            <div ref={messagesEndRef} />
           </div>
         </div>
 
-        {/* 输入框 */}
-        <div className="p-4 bg-[#1A1B1E]">
-          <div className="max-w-3xl mx-auto">
+        {/* 底部输入区域 - 移除分割线 */}
+        <div className="h-[120px] bg-[#1A1B1E] flex items-center justify-center px-4">
+          <div className="w-full max-w-3xl relative">
             <form onSubmit={handleSubmit} className="relative">
               <input
                 type="text"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="问一问喵星人"
-                className="w-full p-4 pr-20 bg-[#35363A] rounded-2xl focus:outline-none text-[#E3E3E3] placeholder-[#9AA0A6]"
+                className="w-full h-[52px] px-4 pr-20 bg-[#27282A] rounded-2xl focus:outline-none text-[16px] text-[#E3E3E3] placeholder-[#9AA0A6]"
                 disabled={isLoading}
               />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
-                <button className="p-2 text-[#9AA0A6] hover:bg-[#3C4043] rounded-lg">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center space-x-3">
+                <button className="p-2 text-[#9AA0A6] hover:bg-[#35363A] rounded-lg">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </button>
                 <button 
@@ -317,6 +354,9 @@ export default function ChatPage() {
                 </button>
               </div>
             </form>
+            <div className="mt-2 text-xs text-center text-[#9AA0A6]">
+              喵星人的回答未必正确无误，请仔细核查
+            </div>
           </div>
         </div>
       </div>
