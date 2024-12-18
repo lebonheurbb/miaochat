@@ -11,7 +11,7 @@ export async function generateResponse(prompt: string) {
     const completion = await client.chat.completions.create({
       model: "deepseek-chat",
       messages: [
-        { role: "system", content: "你是一个有用的助手，名字叫喵哥。" },
+        { role: "system", content: "你是一个有用的助手，名字叫喵星人。" },
         { role: "user", content: prompt }
       ],
       stream: false

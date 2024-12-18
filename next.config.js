@@ -14,10 +14,10 @@ const nextConfig = {
   // 关闭严格模式便于调试
   reactStrictMode: false,
   
-  // 禁用 webpack 5 的 appDir 功能
-  experimental: {
-    appDir: false,
-  },
+  // 启用环境变量
+  env: {
+    NEXT_PUBLIC_GEMINI_API_KEY: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+  }
 }
 
 module.exports = nextConfig

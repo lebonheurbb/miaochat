@@ -1,7 +1,11 @@
-const GEMINI_API_KEY = 'AIzaSyAmqhgZy28wBjtSujMM8fHc4dLEL4ivxhE';
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
 const API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
 
 export async function generateResponse(prompt: string) {
+  if (!GEMINI_API_KEY) {
+    throw new Error('Missing Gemini API key');
+  }
+
   try {
     const requestBody = {
       contents: [{
@@ -11,8 +15,6 @@ export async function generateResponse(prompt: string) {
       }]
     };
 
-    console.log('Request body:', JSON.stringify(requestBody, null, 2));
-
     const response = await fetch(`${API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
@@ -21,23 +23,13 @@ export async function generateResponse(prompt: string) {
       body: JSON.stringify(requestBody)
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Error response:', errorText);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        throw new Error(`API request failed: ${errorData.error?.message || response.status}`);
-      } catch (e) {
-        throw new Error(`API request failed with status ${response.status}: ${errorText}`);
-      }
+      throw new Error(`API request failed: ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('Success response:', JSON.stringify(data, null, 2));
     
     if (!data.candidates || data.candidates.length === 0) {
       throw new Error('No response from API');

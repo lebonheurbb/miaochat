@@ -1,95 +1,85 @@
+import Link from 'next/link'
+
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#0B1120]">
-      {/* 导航栏 */}
-      <nav className="bg-[#0B1120]/50 backdrop-blur-sm border-b border-[#1E293B]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">
-                喵哥 AI
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <a href="/login" className="text-gray-300 hover:text-[#0066FF]">
-                登录
-              </a>
-              <a href="/register" className="px-4 py-2 rounded-full bg-[#0066FF] hover:bg-[#0052CC] text-white">
-                注册
-              </a>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#1A1B1E] relative overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-[150%] h-[150%] bg-gradient-to-br from-blue-500/10 via-transparent to-purple-500/10 blur-3xl" />
+      </div>
 
-      {/* 主要内容 */}
-      <main className="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-4xl font-extrabold sm:text-5xl md:text-6xl bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">
-            与 AI 对话，探索无限可能
-          </h2>
-          <p className="mt-6 text-xl text-[#94A3B8] max-w-3xl mx-auto">
-            基于先进的人工智能技术，为您提供智能、自然的对话体验。
-            无论是学习、工作还是娱乐，都能找到答案。
-          </p>
-          <div className="mt-10 flex justify-center gap-4">
-            <a
+      <div className="relative max-w-5xl mx-auto px-4 py-20">
+        <div className="text-center space-y-12">
+          <h1 className="text-6xl md:text-7xl font-bold tracking-tight">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+              与喵对话，探索无限可能
+            </span>
+          </h1>
+
+          <div className="flex items-center justify-center space-x-6 pt-8">
+            <Link 
               href="/chat"
-              className="px-8 py-3 text-lg font-medium rounded-full bg-gradient-to-r from-[#0066FF] to-[#00AAFF] hover:from-[#0052CC] hover:to-[#0099FF] text-white transition-all duration-200"
+              className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl text-[#E3E3E3] text-lg font-medium transition-all hover:scale-105 hover:shadow-lg hover:shadow-blue-500/25"
             >
-              开始对话
-            </a>
-            <a
-              href="/about"
-              className="px-8 py-3 text-lg font-medium rounded-full border border-[#1E293B] hover:border-[#0066FF] hover:text-[#0066FF] text-white transition-colors"
+              <span className="mr-3">开始对话</span>
+              <svg className="w-6 h-6 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </Link>
+
+            <Link 
+              href="#features"
+              className="group inline-flex items-center px-8 py-4 bg-[#27282A] hover:bg-[#35363A] rounded-2xl text-[#E3E3E3] text-lg font-medium transition-all hover:scale-105"
             >
-              了解更多
-            </a>
+              <span className="mr-3">了解更多</span>
+              <svg className="w-6 h-6 transition-transform group-hover:translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </Link>
+          </div>
+
+          <div id="features" className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-20">
+            {[
+              {
+                title: '智能对话',
+                description: '基于先进的大语言模型，提供流畅自然的对话体验',
+                icon: '🤖'
+              },
+              {
+                title: '知识渊博',
+                description: '拥有海量知识储备，助你探索任何领域的奥秘',
+                icon: '🌟'
+              },
+              {
+                title: '个性化回答',
+                description: '深度解上下文，提供量身定制的专业解答',
+                icon: '✨'
+              },
+              {
+                title: '实时响应',
+                description: '毫秒级响应速度，让对话如行云流水般自然',
+                icon: '⚡'
+              }
+            ].map((feature, index) => (
+              <div 
+                key={index} 
+                className="group p-8 bg-[#27282A]/50 backdrop-blur-sm rounded-3xl space-y-4 hover:bg-[#27282A] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-blue-500/5"
+              >
+                <div className="text-3xl">{feature.icon}</div>
+                <h3 className="text-2xl font-medium text-[#E3E3E3] group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-400 group-hover:to-purple-400">
+                  {feature.title}
+                </h3>
+                <p className="text-lg text-[#9AA0A6]">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="pt-20 text-[#9AA0A6]">
+            <p className="text-sm">基于 Next.js 和 Claude 构建</p>
           </div>
         </div>
-
-        {/* 特性展示 */}
-        <div className="mt-32 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#0066FF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-[#0066FF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold text-[#0066FF]">即时响应</h3>
-            <p className="mt-2 text-[#94A3B8]">快速、准确的回答，让您的对话流畅自然</p>
-          </div>
-
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#00AAFF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-[#00AAFF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold text-[#00AAFF]">安全可靠</h3>
-            <p className="mt-2 text-[#94A3B8]">严格的隐私保护，确保您的对话安全</p>
-          </div>
-
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#0066FF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-gradient-to-r from-[#0066FF] to-[#00AAFF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">持续学习</h3>
-            <p className="mt-2 text-[#94A3B8]">AI 不断进化，为您提供更好的服务</p>
-          </div>
-        </div>
-      </main>
-
-      {/* 页脚 */}
-      <footer className="mt-24 bg-[#0B1120]/50 border-t border-[#1E293B]">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-[#94A3B8]">
-            <p>© 2024 喵哥 AI. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }
