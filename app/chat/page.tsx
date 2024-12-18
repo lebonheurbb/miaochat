@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { generateResponse } from '../utils/deepseek'
+import Link from 'next/link'
+import { AI_CONFIG, getRandomGreeting, formatResponse } from '../utils/aiConfig'
 
 interface Message {
   id: string
@@ -25,6 +27,19 @@ export default function ChatPage() {
   // 获取当前聊天的消息
   const currentMessages = chats.find(chat => chat.id === currentChatId)?.messages || []
 
+  // 添加消息容器的引用
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // 添加自动滚动函数
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  // 当消息更新时自动滚动
+  useEffect(() => {
+    scrollToBottom()
+  }, [currentMessages, isLoading])
+
   // 创建新对话
   const createNewChat = () => {
     const newChat: Chat = {
@@ -45,9 +60,18 @@ export default function ChatPage() {
     e.preventDefault()
     if (!message.trim() || isLoading) return
     
+    let chatId = currentChatId
+    
     // 如果没有当前对话，创建一个新的
-    if (!currentChatId) {
-      createNewChat()
+    if (!chatId) {
+      chatId = Date.now().toString()
+      const newChat: Chat = {
+        id: chatId,
+        title: message.trim().slice(0, 20) + (message.length > 20 ? '...' : ''),
+        messages: []
+      }
+      setChats(prev => [newChat, ...prev])
+      setCurrentChatId(chatId)
     }
 
     const userMessage: Message = {
@@ -56,17 +80,9 @@ export default function ChatPage() {
       content: message.trim()
     }
 
-    // 更新聊天记录
+    // 立即更新聊天记录
     setChats(prev => prev.map(chat => {
-      if (chat.id === currentChatId) {
-        // 如果是第一条消息，更新标题
-        if (chat.messages.length === 0) {
-          return {
-            ...chat,
-            title: message.trim().slice(0, 20) + (message.length > 20 ? '...' : ''),
-            messages: [...chat.messages, userMessage]
-          }
-        }
+      if (chat.id === chatId) {
         return {
           ...chat,
           messages: [...chat.messages, userMessage]
@@ -83,12 +99,12 @@ export default function ChatPage() {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response || '抱歉，我现在无法回答。请稍后再试。'
+        content: formatResponse(response || '哎呀，本喵突然有点累了，待会再回答你喵~')
       }
 
       // 更新聊天记录
       setChats(prev => prev.map(chat => {
-        if (chat.id === currentChatId) {
+        if (chat.id === chatId) {
           return {
             ...chat,
             messages: [...chat.messages, aiMessage]
@@ -101,12 +117,11 @@ export default function ChatPage() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '抱歉，发生了错误。请稍后再试。'
+        content: formatResponse('抱歉，本喵遇到了一点小问题，请稍后再试~')
       }
       
-      // 更新聊天记录
       setChats(prev => prev.map(chat => {
-        if (chat.id === currentChatId) {
+        if (chat.id === chatId) {
           return {
             ...chat,
             messages: [...chat.messages, errorMessage]
@@ -123,15 +138,45 @@ export default function ChatPage() {
     <div className="flex h-screen bg-[#1A1B1E]">
       {/* 左侧工具栏 */}
       <div className="w-16 bg-[#1A1B1E] flex flex-col items-center py-2">
-        {/* 新建聊天按钮 */}
-        <button 
-          onClick={createNewChat}
-          className="w-10 h-10 flex items-center justify-center text-[#E3E3E3] hover:bg-[#35363A] rounded-full"
+        {/* 返回主页按钮 */}
+        <Link 
+          href="/"
+          className="w-10 h-10 mb-2 flex items-center justify-center text-[#9AA0A6] hover:bg-[#35363A] rounded-full"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
           </svg>
-        </button>
+        </Link>
+
+        {/* 聊天列表 */}
+        <div className="flex-1 w-full overflow-y-auto py-2 space-y-1">
+          {/* 新建聊天按钮 */}
+          <button 
+            onClick={createNewChat}
+            className="w-10 h-10 mx-auto flex items-center justify-center text-[#E3E3E3] hover:bg-[#35363A] rounded-full"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+
+          {/* 聊天列表按钮 */}
+          {chats.map(chat => (
+            <button
+              key={chat.id}
+              onClick={() => selectChat(chat.id)}
+              className={`w-10 h-10 mx-auto flex items-center justify-center rounded-full ${
+                currentChatId === chat.id 
+                  ? 'bg-[#35363A] text-[#E3E3E3]' 
+                  : 'text-[#9AA0A6] hover:bg-[#35363A]'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </button>
+          ))}
+        </div>
 
         {/* 底部工具按钮 */}
         <div className="mt-auto space-y-2">
@@ -176,40 +221,70 @@ export default function ChatPage() {
 
         {/* 聊天区域 */}
         <div className="flex-1 overflow-auto">
-          <div className="max-w-3xl mx-auto p-4 space-y-6">
+          <div className="max-w-3xl mx-auto p-4 space-y-8">
             {currentMessages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] space-y-6">
-                <div className="text-center space-y-2">
+                <div className="text-center space-y-4">
                   <h2 className="text-4xl">
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">hong</span>
                     <span className="text-pink-400">，你好</span>
                   </h2>
-                  <p className="text-[#9AA0A6]">有什么我可以帮你的吗？</p>
+                  <p className="text-[#9AA0A6]">{getRandomGreeting()}</p>
                 </div>
               </div>
             )}
             {currentMessages.map((msg) => (
-              <div key={msg.id} className="flex space-x-4">
-                <div className="w-8 h-8 flex-shrink-0">
-                  {msg.role === 'assistant' ? (
-                    <span className="flex items-center justify-center w-8 h-8 bg-[#8AB4F8] rounded-full text-[#1A1B1E] text-sm">喵</span>
-                  ) : (
-                    <span className="flex items-center justify-center w-8 h-8 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-sm">我</span>
-                  )}
-                </div>
-                <div className="flex-1 text-[#E3E3E3] text-[15px] leading-relaxed">
-                  {msg.content}
+              <div key={msg.id} className="group">
+                <div className="flex items-start space-x-6 px-6">
+                  <div className="w-10 h-10 flex-shrink-0 mt-1">
+                    {msg.role === 'assistant' ? (
+                      <span className="flex items-center justify-center w-10 h-10 bg-[#8AB4F8] rounded-full text-[#1A1B1E] text-base">喵</span>
+                    ) : (
+                      <span className="flex items-center justify-center w-10 h-10 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-base">我</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="text-base text-[#9AA0A6]">
+                      {msg.role === 'assistant' ? AI_CONFIG.name : '我'}
+                    </div>
+                    <div className="text-[#E3E3E3] text-base leading-7 whitespace-pre-wrap">
+                      {msg.content.split('\n').map((paragraph, index) => (
+                        <div 
+                          key={index} 
+                          className={`mb-4 ${
+                            paragraph.startsWith('1.') || 
+                            paragraph.startsWith('2.') || 
+                            paragraph.startsWith('3.') || 
+                            paragraph.startsWith('4.') || 
+                            paragraph.startsWith('5.') || 
+                            paragraph.startsWith('6.') || 
+                            paragraph.startsWith('7.') || 
+                            paragraph.startsWith('8.') 
+                              ? 'pl-4' // 列表项缩进
+                              : ''
+                          }`}
+                        >
+                          {paragraph}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
             {isLoading && (
-              <div className="flex space-x-4">
-                <div className="w-8 h-8 flex-shrink-0">
+              <div className="flex items-start space-x-4 px-4">
+                <div className="w-8 h-8 flex-shrink-0 mt-1">
                   <span className="flex items-center justify-center w-8 h-8 bg-[#8AB4F8] rounded-full text-[#1A1B1E] text-sm">喵</span>
                 </div>
-                <div className="text-[#9AA0A6]">思考中...</div>
+                <div className="flex-1 space-y-1">
+                  <div className="text-sm text-[#9AA0A6]">喵星人</div>
+                  <div className="text-[#9AA0A6]">思考中...</div>
+                </div>
               </div>
             )}
+            {/* 添加一个空的 div 作为滚动目标 */}
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
