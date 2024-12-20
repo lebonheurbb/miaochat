@@ -1,0 +1,2 @@
+1|git log --oneline | less 
+2|git push origin main --tags 

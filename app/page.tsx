@@ -1,95 +1,80 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
+import { useAuth } from './contexts/AuthContext'
+
 export default function Home() {
+  const { user } = useAuth()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#0B1120]">
-      {/* 导航栏 */}
-      <nav className="bg-[#0B1120]/50 backdrop-blur-sm border-b border-[#1E293B]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+    <div className="min-h-screen bg-[#1A1B1E] text-white">
+      {/* 固定的顶部标题栏 */}
+      <div className="fixed top-0 left-0 right-0 bg-[#1A1B1E] z-10">
+        <div className="w-full max-w-sm mx-auto">
+          <div className="flex items-center justify-between px-4 py-4">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">
-                喵哥 AI
-              </h1>
+              <button className="p-2 text-white">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <span className="ml-2 text-xl text-white">
+                Gemini
+              </span>
             </div>
-            <div className="flex items-center space-x-4">
-              <a href="/login" className="text-gray-300 hover:text-[#0066FF]">
+            {mounted && (
+              <Link 
+                href="/login" 
+                className="px-6 py-2 bg-[#E3E3E3]/10 hover:bg-[#E3E3E3]/20 rounded-full text-[#E3E3E3]"
+              >
                 登录
-              </a>
-              <a href="/register" className="px-4 py-2 rounded-full bg-[#0066FF] hover:bg-[#0052CC] text-white">
-                注册
-              </a>
-            </div>
+              </Link>
+            )}
           </div>
         </div>
-      </nav>
+      </div>
 
-      {/* 主要内容 */}
-      <main className="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <h2 className="text-4xl font-extrabold sm:text-5xl md:text-6xl bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">
-            与 AI 对话，探索无限可能
-          </h2>
-          <p className="mt-6 text-xl text-[#94A3B8] max-w-3xl mx-auto">
-            基于先进的人工智能技术，为您提供智能、自然的对话体验。
-            无论是学习、工作还是娱乐，都能找到答案。
-          </p>
-          <div className="mt-10 flex justify-center gap-4">
-            <a
-              href="/chat"
-              className="px-8 py-3 text-lg font-medium rounded-full bg-gradient-to-r from-[#0066FF] to-[#00AAFF] hover:from-[#0052CC] hover:to-[#0099FF] text-white transition-all duration-200"
-            >
-              开始对话
-            </a>
-            <a
-              href="/about"
-              className="px-8 py-3 text-lg font-medium rounded-full border border-[#1E293B] hover:border-[#0066FF] hover:text-[#0066FF] text-white transition-colors"
-            >
-              了解更多
-            </a>
+      {/* 主要内容区 */}
+      <div className="flex flex-col items-center justify-center px-4 pt-20 pb-8">
+        <div className="w-full max-w-sm mx-auto">
+          {/* 图片容器 */}
+          <div className="mb-6 rounded-lg overflow-hidden">
+            <img 
+              src="/anime-girl.jpg"
+              alt="动漫人物"
+              className="w-full h-auto"
+              style={{ maxHeight: '300px', objectFit: 'cover' }}
+            />
+          </div>
+
+          {/* 文本内容 */}
+          <div className="space-y-4">
+            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
+              Gemini
+            </h1>
+            <h2 className="text-2xl font-bold text-white">
+              获取创意灵感，提升工作效率
+            </h2>
+            <p className="text-[#9AA0A6] text-lg">
+              轻松对话，让 Google AI 帮你写作、规划、学习或处理其他事务
+            </p>
+            {mounted && (
+              <Link 
+                href="/login" 
+                className="inline-block w-full px-8 py-3 bg-[#0B57D0] hover:bg-[#0842A0] rounded-2xl text-white text-center font-medium"
+              >
+                登录
+              </Link>
+            )}
           </div>
         </div>
-
-        {/* 特性展示 */}
-        <div className="mt-32 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#0066FF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-[#0066FF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold text-[#0066FF]">即时响应</h3>
-            <p className="mt-2 text-[#94A3B8]">快速、准确的回答，让您的对话流畅自然</p>
-          </div>
-
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#00AAFF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-[#00AAFF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold text-[#00AAFF]">安全可靠</h3>
-            <p className="mt-2 text-[#94A3B8]">严格的隐私保护，确保您的对话安全</p>
-          </div>
-
-          <div className="relative p-6 bg-[#0B1120]/50 rounded-2xl border border-[#1E293B] hover:border-[#0066FF] transition-colors">
-            <div className="absolute -top-4 left-4 w-8 h-8 bg-gradient-to-r from-[#0066FF] to-[#00AAFF] rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-              </svg>
-            </div>
-            <h3 className="mt-4 text-xl font-semibold bg-gradient-to-r from-[#0066FF] to-[#00AAFF] bg-clip-text text-transparent">持续学习</h3>
-            <p className="mt-2 text-[#94A3B8]">AI 不断进化，为您提供更好的服务</p>
-          </div>
-        </div>
-      </main>
-
-      {/* 页脚 */}
-      <footer className="mt-24 bg-[#0B1120]/50 border-t border-[#1E293B]">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-[#94A3B8]">
-            <p>© 2024 喵哥 AI. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   )
 }

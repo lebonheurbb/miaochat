@@ -1,0 +1,8 @@
+1|# 1. 暂存当前修改
+2|git stash
+3|
+4|# 2. 切换到修复版本
+5|git checkout bd21fc3
+6|
+7|# 3. 重启开发服务器
+8|npm run dev 

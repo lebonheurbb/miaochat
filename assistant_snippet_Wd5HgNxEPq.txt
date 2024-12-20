@@ -1,0 +1,9 @@
+1|# 1. 创建新标签
+2|git tag miaoV1.1 bd21fc3
+3|
+4|# 2. 查看所有标签
+5|git tag 
+6|# 查看所有提交历史
+7|git log --oneline
+8|# 创建并切换到新的主分支
+9|git checkout -b main miaoV1.1

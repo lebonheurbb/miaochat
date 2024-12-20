@@ -1,0 +1,5 @@
+1|# 1. 回到修复版本
+2|git checkout bd21fc3
+3|
+4|# 2. 重启开发服务器
+5|npm run dev 
