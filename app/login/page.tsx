@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import Image from 'next/image'
@@ -9,7 +9,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { login } = useAuth()
+  const { login, user } = useAuth()
+
+  useEffect(() => {
+    // 如果用户已登录，直接重定向到聊天页面
+    if (user) {
+      router.push('/chat')
+    }
+  }, [user, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,45 +60,23 @@ export default function LoginPage() {
 
         {/* 登录表单 */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-[#202124] rounded-lg p-4">
+          <div>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="电子邮件地址或电话号码"
-              className="w-full bg-transparent text-white placeholder-gray-400 focus:outline-none text-lg"
+              placeholder="电子邮件地址"
+              className="w-full px-4 py-3 bg-[#303134] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
           </div>
-
-          <div className="text-sm text-[#8ab4f8] hover:text-blue-400 cursor-pointer">
-            忘记了电子邮件地址？
-          </div>
-
-          <div className="text-sm text-[#9AA0A6]">
-            不是您自己的计算机？请使用无痕浏览窗口进行登录。
-            <span className="text-[#8ab4f8] hover:text-blue-400 cursor-pointer ml-1">
-              详细了解如何使用访客模式
-            </span>
-          </div>
-
-          <div className="flex justify-between items-center pt-4">
-            <button
-              type="button"
-              className="text-[#8ab4f8] hover:text-blue-400 font-medium text-sm"
-              onClick={() => router.push('/signup')}
-            >
-              创建账号
-            </button>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-[#8ab4f8] hover:bg-blue-400 text-[#202124] rounded-md font-medium"
-            >
-              下一步
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full px-4 py-3 bg-[#0B57D0] hover:bg-[#0842A0] text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? '登录中...' : '登录'}
+          </button>
         </form>
       </div>
     </div>

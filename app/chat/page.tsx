@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { generateResponse } from '../utils/deepseek'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { AI_CONFIG, getRandomGreeting, formatResponse } from '../utils/aiConfig'
 import { useAuth } from '../contexts/AuthContext'
 import Image from 'next/image'
 import { HiMenuAlt2, HiOutlineRefresh } from 'react-icons/hi'
-import { IoSettingsOutline } from 'react-icons/io5'
+import { IoSettingsOutline, IoAdd } from 'react-icons/io5'
 import { BiHistory } from 'react-icons/bi'
 import { AiOutlineQuestionCircle } from 'react-icons/ai'
 import { BsImage, BsArrowRightCircleFill } from 'react-icons/bs'
@@ -60,7 +61,8 @@ const LoadingDots = () => {
 };
 
 export default function ChatPage() {
-  const { user } = useAuth()  // 获取用户信息
+  const router = useRouter()
+  const { user, logout } = useAuth()  // 获取用户信息和登出函数
   const [message, setMessage] = useState('')
   const [currentChatId, setCurrentChatId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -69,6 +71,8 @@ export default function ChatPage() {
   const [greeting, setGreeting] = useState('')
   const [mounted, setMounted] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -215,6 +219,30 @@ export default function ChatPage() {
     }
   }
 
+  // 处理点击空白处关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
+
+  // 处理退出登录
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
+
   return (
     <div className="flex h-screen bg-[#1A1B1E] overflow-hidden">
       {/* 侧边栏 */}
@@ -223,6 +251,30 @@ export default function ChatPage() {
           <div className="flex items-center p-4">
             <span className="text-xl font-semibold">Gemini</span>
             <span className="ml-2 text-sm text-gray-400">1.5 Flash</span>
+          </div>
+
+          {/* 添加发起新对话按钮 */}
+          <div className="px-4 space-y-2">
+            <button
+              onClick={() => {
+                setCurrentChatId(null);  // 清除当前聊天
+                setSidebarOpen(false);   // 关闭侧边栏
+                router.push('/?from=chat');  // 返回首页，带上来源参数
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#303134] hover:bg-[#404144] rounded-full text-[#E3E3E3] transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              <span>返回首页</span>
+            </button>
+            <button
+              onClick={createNewChat}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-[#303134] hover:bg-[#404144] rounded-full text-[#E3E3E3] transition-colors"
+            >
+              <IoAdd size={20} />
+              <span>发起新对话</span>
+            </button>
           </div>
           
           <div className="flex-1 overflow-y-auto">
@@ -266,11 +318,11 @@ export default function ChatPage() {
       {/* 主聊天区域 */}
       <div className="flex-1 flex flex-col h-screen">
         {/* 顶部导航栏 - 固定定位 */}
-        <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-4 bg-[#202124] z-20">
+        <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-4 bg-[#1A1B1E] z-20">
           <div className="flex items-center">
             <button 
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="text-white p-2 hover:bg-gray-700 rounded-lg"
+              className="text-white p-2 hover:bg-[#303134] rounded-lg"
             >
               <HiMenuAlt2 size={24} />
             </button>
@@ -280,13 +332,101 @@ export default function ChatPage() {
             )}
           </div>
           
-          <button
-            onClick={createNewChat}
-            className="text-white p-2 hover:bg-gray-700 rounded-lg"
-            title="新建聊天"
-          >
-            <HiOutlineRefresh size={24} />
-          </button>
+          {/* 个人信息头像和下拉菜单 */}
+          <div className="relative" ref={userMenuRef}>
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden hover:ring-2 hover:ring-gray-500 transition-all"
+            >
+              {user?.avatarUrl ? (
+                <Image
+                  src={user.avatarUrl}
+                  alt="用户头像"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-sm">
+                  {user?.email?.[0].toUpperCase() || '?'}
+                </div>
+              )}
+            </button>
+
+            {/* 下拉菜单 */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-80 backdrop-blur-xl bg-[#202124]/80 rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)] overflow-hidden z-50">
+                {/* 用户信息部分 */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                        {user?.avatarUrl ? (
+                          <Image
+                            src={user.avatarUrl}
+                            alt="用户头像"
+                            width={48}
+                            height={48}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-lg">
+                            {user?.email?.[0].toUpperCase() || '?'}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-white font-medium">
+                          {user?.nickname || user?.email?.split('@')[0]}
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          {user?.email}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowUserMenu(false)}
+                      className="text-gray-400 hover:text-white"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <button className="w-full mt-2 px-4 py-2 bg-[#303134]/90 hover:bg-[#404144]/90 rounded-xl text-white text-sm transition-colors backdrop-blur-md">
+                    管理您的 Google 账号
+                  </button>
+                </div>
+
+                {/* 菜单选项 */}
+                <div className="px-2">
+                  <button
+                    onClick={() => {/* 添加账号逻辑 */}}
+                    className="w-full px-4 py-2 text-left text-white hover:bg-[#303134]/80 rounded-lg flex items-center space-x-2 my-1 backdrop-blur-md"
+                  >
+                    <IoAdd className="text-gray-400" />
+                    <span>添加账号</span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-white hover:bg-[#303134]/80 rounded-lg flex items-center space-x-2 my-1 backdrop-blur-md"
+                  >
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    <span>退出账号</span>
+                  </button>
+                </div>
+
+                {/* 底部链接 */}
+                <div className="px-4 py-3 text-xs text-gray-400 flex items-center justify-center space-x-2 bg-[#1A1B1E]/50 backdrop-blur-md">
+                  <a href="#" className="hover:text-white">隐私权政策</a>
+                  <span>•</span>
+                  <a href="#" className="hover:text-white">服务条款</a>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 消息列表区域 - 添加底部内边距为输入框留出空间 */}
@@ -306,7 +446,7 @@ export default function ChatPage() {
                     )}
                   </h2>
                   <p className="text-[#9AA0A6] transition-all duration-200 ease-in-out">
-                    {greeting || '听说你在找一个博学多才的AI? 巧了，本喵正好符合条件，喵~'}
+                    {greeting || '让本喵猜猜...你一定是来找我解答人生难题的吧？不对吗？喵~'}
                   </p>
                 </div>
               </div>
@@ -382,27 +522,35 @@ export default function ChatPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-[#1A1B1E] p-4">
           <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative">
-              <button
-                type="button"
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
-                onClick={() => console.log('Upload image')}
-              >
-                <BsImage size={20} />
-              </button>
-              <input
-                type="text"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="问一问 Gemini"
-                className="w-full bg-[#303134] text-white rounded-3xl pl-12 pr-12 py-3 focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-500 hover:text-blue-400 disabled:opacity-50 disabled:hover:text-blue-500"
-              >
-                <BsArrowRightCircleFill size={24} />
-              </button>
+              <div className="flex items-center gap-3 bg-[#303134] rounded-full pl-4 pr-3 hover:bg-[#404144] transition-colors">
+                <button
+                  type="button"
+                  className="flex-shrink-0 text-gray-400"
+                  onClick={() => console.log('Upload image')}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8.5 10C9.32843 10 10 9.32843 10 8.5C10 7.67157 9.32843 7 8.5 7C7.67157 7 7 7.67157 7 8.5C7 9.32843 7.67157 10 8.5 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M21 15L16 10L5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="问一问"
+                  className="flex-1 bg-transparent text-white py-3 focus:outline-none text-[16px]"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !message.trim()}
+                  className="flex-shrink-0 p-2 text-[#8E8EA0] hover:text-white disabled:opacity-40 disabled:hover:text-[#8E8EA0] transition-colors"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4L3 11L10 14L13 21L20 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
             </form>
           </div>
         </div>
