@@ -3,11 +3,9 @@ import { Server as NetServer } from 'http'
 import { NextApiRequest } from 'next'
 import { NextApiResponse } from 'next'
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+// 使用新的路由配置格式
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const initSocket = (req: NextApiRequest, res: NextApiResponse) => {
   if (!res.socket.server.io) {
@@ -39,4 +37,5 @@ const initSocket = (req: NextApiRequest, res: NextApiResponse) => {
   res.end()
 }
 
-export default initSocket 
+export const GET = initSocket
+export const POST = initSocket 
