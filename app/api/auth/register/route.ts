@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { SignJWT } from 'jose'
-import { prisma } from '@/lib/prisma'
-import { hashSync } from 'bcryptjs'
+import { prisma } from '@/lib/db'
+import { hash } from '@node-rs/bcrypt'
 
 export const runtime = 'edge'
 
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
-
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const { email, password, name } = await request.json()
 
@@ -20,7 +16,7 @@ export async function POST(request: NextRequest) {
       return new NextResponse('User already exists', { status: 409 })
     }
 
-    const hashedPassword = hashSync(password, 10)
+    const hashedPassword = await hash(password, 10)
     const user = await prisma.user.create({
       data: {
         email,
@@ -29,15 +25,11 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    const token = await new SignJWT({ userId: user.id })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('24h')
-      .sign(JWT_SECRET)
-
-    return new NextResponse(JSON.stringify({ token }), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    })
+    return NextResponse.json({ 
+      id: user.id,
+      email: user.email,
+      name: user.name
+    }, { status: 201 })
   } catch (error) {
     console.error('Registration error:', error)
     return new NextResponse('Internal Server Error', { status: 500 })

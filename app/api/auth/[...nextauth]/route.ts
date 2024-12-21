@@ -1,7 +1,9 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
+import { verify } from '@node-rs/bcrypt'
+
+export const runtime = 'edge'
 
 const handler = NextAuth({
   providers: [
@@ -24,12 +26,9 @@ const handler = NextAuth({
           return null
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+        const isValid = await verify(credentials.password, user.password)
 
-        if (!isPasswordValid) {
+        if (!isValid) {
           return null
         }
 
