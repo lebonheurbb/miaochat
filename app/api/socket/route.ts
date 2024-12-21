@@ -1,24 +1,64 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { Server as SocketServer } from 'socket.io'
 
 export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
-  if (request.headers.get('upgrade') !== 'websocket') {
-    return new NextResponse('Expected Upgrade: websocket', { status: 426 })
+declare global {
+  var io: SocketServer | undefined
+}
+
+const initSocket = () => {
+  if (!global.io) {
+    global.io = new SocketServer({
+      cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+      }
+    })
+
+    global.io.on('connection', (socket) => {
+      console.log('Client connected')
+
+      socket.on('join', (chatId) => {
+        socket.join(chatId)
+        console.log(`Client joined chat: ${chatId}`)
+      })
+
+      socket.on('leave', (chatId) => {
+        socket.leave(chatId)
+        console.log(`Client left chat: ${chatId}`)
+      })
+
+      socket.on('message', (data) => {
+        const { chatId, message } = data
+        global.io?.to(chatId).emit('message', message)
+      })
+
+      socket.on('disconnect', () => {
+        console.log('Client disconnected')
+      })
+    })
   }
+  return global.io
+}
 
-  const { searchParams } = new URL(request.url)
-  const token = searchParams.get('token')
-
+export async function GET() {
   try {
-    return new NextResponse('WebSocket connection established', { status: 101 })
-  } catch (err) {
-    console.error('WebSocket error:', err)
-    return new NextResponse('WebSocket error', { status: 500 })
+    initSocket()
+    return new NextResponse('Socket server is running', { status: 200 })
+  } catch (error) {
+    console.error('Socket initialization error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  return new NextResponse('Method not allowed', { status: 405 })
+export async function POST() {
+  try {
+    initSocket()
+    return new NextResponse('Socket server is running', { status: 200 })
+  } catch (error) {
+    console.error('Socket initialization error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 } 
