@@ -4,6 +4,9 @@ const nextConfig = {
   images: {
     domains: ['*'],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['bcrypt']
+  },
   async headers() {
     return [
       {
@@ -17,6 +20,10 @@ const nextConfig = {
     ]
   },
   webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': '.',
+    }
     config.resolve.fallback = {
       ...config.resolve.fallback,
       crypto: require.resolve('crypto-browserify'),
