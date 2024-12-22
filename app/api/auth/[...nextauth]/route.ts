@@ -1,11 +1,11 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { prisma } from '../../../../lib/prisma'
+import { prisma } from '@/lib/db'
 import * as argon2 from 'argon2'
 
 export const runtime = 'edge'
 
-export const authOptions = {
+const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -46,8 +46,6 @@ export const authOptions = {
   pages: {
     signIn: '/login'
   }
-}
-
-const handler = NextAuth(authOptions)
+})
 
 export { handler as GET, handler as POST } 

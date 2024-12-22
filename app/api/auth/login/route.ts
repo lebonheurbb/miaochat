@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { SignJWT } from 'jose'
-import { prisma } from '@/lib/prisma'
+import prisma from '@/lib/db'
 import { compareSync } from 'bcryptjs'
-
-export const runtime = 'edge'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
 

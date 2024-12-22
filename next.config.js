@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const webpack = require('webpack');
+
 const nextConfig = {
   reactStrictMode: false,
   images: {
@@ -33,8 +35,25 @@ const nextConfig = {
       ...config.resolve.fallback,
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
-      util: require.resolve('util/'),
+      path: require.resolve('path-browserify'),
+      fs: false,
+      net: false,
+      tls: false,
+      http: require.resolve('stream-http'),
+      https: require.resolve('https-browserify'),
+      os: require.resolve('os-browserify/browser'),
+      zlib: require.resolve('browserify-zlib'),
+      querystring: require.resolve('querystring-es3'),
+      timers: require.resolve('timers-browserify'),
+      'node:crypto': false,
+      vm: false,
     }
+    config.plugins.push(
+      new webpack.NormalModuleReplacementPlugin(
+        /^node:crypto$/,
+        require.resolve('crypto-browserify')
+      )
+    )
     return config
   },
 }

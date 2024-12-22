@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../../../auth/[...nextauth]/route'
-import { prisma } from '../../../../../lib/prisma'
-import { generateResponse } from '../../../../../utils/deepseek'
+import { authOptions } from '@/app/auth/[...nextauth]/route'
+import prisma from '@/lib/db'
+import { generateResponse } from '@/app/utils/deepseek'
 
 export async function POST(
   request: Request,
