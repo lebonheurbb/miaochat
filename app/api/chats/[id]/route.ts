@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../lib/prisma'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../auth/[...nextauth]/route'
+import { prisma } from '../../../../lib/prisma'
 
-// 获取单个对话
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -11,56 +10,82 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: '请先登录喵~' },
+        { status: 401 }
+      )
     }
 
     const chat = await prisma.chat.findUnique({
-      where: { id: params.id },
-      include: { messages: true }
+      where: {
+        id: params.id,
+        userId: session.user.email,
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
     })
 
     if (!chat) {
-      return NextResponse.json({ error: 'Chat not found' }, { status: 404 })
-    }
-
-    // 验证用户是否有权限访问该对话
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (chat.userId !== user?.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json(
+        { error: '找不到这个对话喵~' },
+        { status: 404 }
+      )
     }
 
     return NextResponse.json(chat)
-  } catch (error) {
-    console.error('Failed to get chat:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Error in chat route:', error)
+    return NextResponse.json(
+      { error: error.message || '服务器出错了喵~' },
+      { status: 500 }
+    )
   }
 }
 
-// 更新对话标题
-export async function PATCH(
+export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: '请先登录喵~' },
+        { status: 401 }
+      )
     }
 
-    const { title } = await request.json()
-
-    const chat = await prisma.chat.update({
-      where: { id: params.id },
-      data: { title },
-      include: { messages: true }
+    const chat = await prisma.chat.findUnique({
+      where: {
+        id: params.id,
+        userId: session.user.email,
+      },
     })
 
-    return NextResponse.json(chat)
-  } catch (error) {
-    console.error('Failed to update chat:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    if (!chat) {
+      return NextResponse.json(
+        { error: '找不到这个对话喵~' },
+        { status: 404 }
+      )
+    }
+
+    await prisma.chat.delete({
+      where: {
+        id: params.id,
+      },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Error in chat route:', error)
+    return NextResponse.json(
+      { error: error.message || '服务器出错了喵~' },
+      { status: 500 }
+    )
   }
 } 

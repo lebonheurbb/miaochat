@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../../../lib/prisma'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../../../auth/[...nextauth]/route'
-import { generateResponse } from '../../../../utils/deepseek'
-import { Server } from 'socket.io'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../../../auth/[...nextauth]/route'
+import { prisma } from '../../../../../lib/prisma'
+import { generateResponse } from '../../../../../utils/deepseek'
 
 export async function POST(
   request: Request,
@@ -12,70 +11,60 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: '请先登录喵~' },
+        { status: 401 }
+      )
     }
 
-    const { content } = await request.json()
+    const { message } = await request.json()
+    if (!message) {
+      return NextResponse.json(
+        { error: '消息不能为空喵~' },
+        { status: 400 }
+      )
+    }
 
-    // 添加用户消息
-    const chat = await prisma.chat.update({
-      where: { id: params.id },
-      data: {
-        messages: {
-          create: {
-            role: 'user',
-            content
-          }
-        },
-        updatedAt: new Date()
+    const chat = await prisma.chat.findUnique({
+      where: {
+        id: params.id,
+        userId: session.user.email,
       },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: 'asc'
-          }
-        }
-      }
     })
 
-    // 发送用户消息更新
-    const io = (global as any).io
-    if (io) {
-      io.to(params.id).emit('message-update', chat)
+    if (!chat) {
+      return NextResponse.json(
+        { error: '找不到这个对话喵~' },
+        { status: 404 }
+      )
     }
 
-    // 生成 AI 响应
-    const aiResponse = await generateResponse(content)
-
-    // 添加 AI 响应
-    const updatedChat = await prisma.chat.update({
-      where: { id: params.id },
+    const userMessage = await prisma.message.create({
       data: {
-        messages: {
-          create: {
-            role: 'assistant',
-            content: aiResponse
-          }
-        },
-        updatedAt: new Date()
+        content: message,
+        role: 'user',
+        chatId: params.id,
       },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: 'asc'
-          }
-        }
-      }
     })
 
-    // 发送 AI 响应更新
-    if (io) {
-      io.to(params.id).emit('message-update', updatedChat)
-    }
+    const aiResponse = await generateResponse(message)
+    
+    const aiMessage = await prisma.message.create({
+      data: {
+        content: aiResponse,
+        role: 'assistant',
+        chatId: params.id,
+      },
+    })
 
-    return NextResponse.json(updatedChat)
-  } catch (error) {
-    console.error('Failed to add message:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({
+      messages: [userMessage, aiMessage],
+    })
+  } catch (error: any) {
+    console.error('Error in messages route:', error)
+    return NextResponse.json(
+      { error: error.message || '服务器出错了喵~' },
+      { status: 500 }
+    )
   }
 } 

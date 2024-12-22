@@ -1,75 +1,66 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '../../lib/prisma'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '../../auth/[...nextauth]/route'
+import { prisma } from '../../../lib/prisma'
 
-// 获取用户的所有对话
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: '请先登录喵~' },
+        { status: 401 }
+      )
     }
 
     const chats = await prisma.chat.findMany({
-      where: { userId: user.id },
-      include: { messages: true },
-      orderBy: { updatedAt: 'desc' }
+      where: {
+        userId: session.user.email,
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
     })
 
     return NextResponse.json(chats)
-  } catch (error) {
-    console.error('Failed to get chats:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Error in chats route:', error)
+    return NextResponse.json(
+      { error: error.message || '服务器出错了喵~' },
+      { status: 500 }
+    )
   }
 }
 
-// 创建新对话
-export async function POST(request: Request) {
+export async function POST() {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: '请先登录喵~' },
+        { status: 401 }
+      )
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    })
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
-    }
-
-    const { title } = await request.json()
-
-    // 创建新对话，并添加初始消息
     const chat = await prisma.chat.create({
       data: {
-        title: title || '新对话',
-        userId: user.id,
-        messages: {
-          create: {
-            role: 'assistant',
-            content: '你好！让本喵猜猜你今天是来讨论人生还是来听故事的呢？喵~'
-          }
-        }
+        userId: session.user.email,
       },
-      include: {
-        messages: true
-      }
     })
 
     return NextResponse.json(chat)
-  } catch (error) {
-    console.error('Failed to create chat:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  } catch (error: any) {
+    console.error('Error in chats route:', error)
+    return NextResponse.json(
+      { error: error.message || '服务器出错了喵~' },
+      { status: 500 }
+    )
   }
 } 
