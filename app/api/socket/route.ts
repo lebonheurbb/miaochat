@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { Server as SocketServer } from 'socket.io'
 
+// 使用新的路由段配置格式
+export const runtime = 'edge'
+
 declare global {
   var io: SocketServer | undefined
 }
