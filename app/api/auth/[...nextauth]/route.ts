@@ -1,11 +1,11 @@
-import NextAuth from 'next-auth'
+import NextAuth, { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '../../../../lib/prisma'
 import * as argon2 from 'argon2'
 
 export const runtime = 'edge'
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -41,7 +41,7 @@ export const authOptions = {
     })
   ],
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt' as const
   },
   pages: {
     signIn: '/login'
