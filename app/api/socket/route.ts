@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { Server as SocketServer } from 'socket.io'
 
-export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
-export const preferredRegion = 'auto'
+export const config = {
+  runtime: 'nodejs',
+  regions: ['iad1'],
+}
 
 declare global {
   var io: SocketServer | undefined
