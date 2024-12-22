@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
+import { prisma } from '../../../../lib/prisma'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '../../../auth/[...nextauth]/route'
-import { generateResponse } from '@/app/utils/deepseek'
+import { generateResponse } from '../../../../utils/deepseek'
 import { Server } from 'socket.io'
 
 export async function POST(

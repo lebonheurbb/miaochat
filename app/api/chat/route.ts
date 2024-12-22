@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { generateResponse } from '@/app/utils/deepseek'
+import { generateResponse } from '../../utils/deepseek'
 
 export async function POST(request: Request) {
   try {
