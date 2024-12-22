@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "buildCommand": "npx prisma generate && next build",
+  "outputDirectory": ".next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "env": {
+    "PRISMA_SCHEMA_ENGINE_BINARY": "@prisma/engines/schema-engine-linux-arm64-openssl-3.0.x",
+    "PRISMA_QUERY_ENGINE_BINARY": "@prisma/engines/query-engine-linux-arm64-openssl-3.0.x",
+    "PRISMA_QUERY_ENGINE_LIBRARY": "@prisma/engines/libquery_engine-linux-arm64-openssl-3.0.x.so.node",
+    "NEXT_PUBLIC_VERCEL_ENV": "preview"
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": false,
+      "deploy-v1.4": false,
+      "deploy-v1.5": true
+    }
+  },
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+} 
