@@ -22,6 +22,13 @@ const nextConfig = {
     ]
   },
   webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': '.',
+      '@/lib': './lib',
+      '@/app': './app',
+      '@/app/utils': './app/utils'
+    }
     config.resolve.fallback = {
       ...config.resolve.fallback,
       crypto: require.resolve('crypto-browserify'),
