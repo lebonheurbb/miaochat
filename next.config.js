@@ -25,6 +25,8 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': '.',
+      '@/lib': './lib',
+      '@/app': './app',
     }
     config.resolve.fallback = {
       ...config.resolve.fallback,
