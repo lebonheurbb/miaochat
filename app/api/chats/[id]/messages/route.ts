@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../../../auth/[...nextauth]/route'
+import { authOptions } from '../../../auth/[...nextauth]/route'
 import { prisma } from '../../../../../lib/prisma'
 import { generateResponse } from '../../../../utils/deepseek'
 
@@ -17,7 +17,7 @@ export async function POST(
       )
     }
 
-    const { message } = await request.json()
+    const { message } = await request.json() as { message: string }
     if (!message) {
       return NextResponse.json(
         { error: '消息不能为空喵~' },
