@@ -1,11 +1,11 @@
-import NextAuth from 'next-auth'
+import NextAuth, { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { prisma } from '@/lib/db'
-import { verify } from '@node-rs/bcrypt'
+import { prisma } from '../../../../lib/prisma'
+import * as argon2 from 'argon2'
 
 export const runtime = 'edge'
 
-const handler = NextAuth({
+export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -26,7 +26,7 @@ const handler = NextAuth({
           return null
         }
 
-        const isValid = await verify(credentials.password, user.password)
+        const isValid = await argon2.verify(user.password, credentials.password)
 
         if (!isValid) {
           return null
@@ -41,11 +41,13 @@ const handler = NextAuth({
     })
   ],
   session: {
-    strategy: 'jwt'
+    strategy: 'jwt' as const
   },
   pages: {
     signIn: '/login'
   }
-})
+}
+
+const handler = NextAuth(authOptions)
 
 export { handler as GET, handler as POST } 

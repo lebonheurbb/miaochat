@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { generateResponse } from '@/app/utils/deepseek'
+import { generateResponse } from '../../utils/deepseek'
 
 export async function POST(request: Request) {
   try {
@@ -13,13 +13,11 @@ export async function POST(request: Request) {
     }
 
     const response = await generateResponse(message)
-    
-    return NextResponse.json({ message: response })
-
-  } catch (error) {
-    console.error('Chat API error:', error)
+    return NextResponse.json({ response })
+  } catch (error: any) {
+    console.error('Error in chat route:', error)
     return NextResponse.json(
-      { error: '喵呜~ 出了点小问题，让我休息一下再试试吧！' },
+      { error: error.message || '服务器出错了喵~' },
       { status: 500 }
     )
   }

@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server'
 import { Server as SocketServer } from 'socket.io'
 
-export const config = {
-  runtime: 'nodejs',
-  dynamic: 'force-dynamic'
-}
+// 使用新的路由段配置格式
+export const runtime = 'nodejs'
 
 declare global {
   var io: SocketServer | undefined

@@ -1,11 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  images: {
-    domains: ['*'],
-  },
+  output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['bcrypt']
+    serverComponentsExternalPackages: ['@prisma/client', 'prisma']
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*',
+      },
+    ],
   },
   async headers() {
     return [
@@ -23,6 +29,9 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': '.',
+      '@/lib': './lib',
+      '@/app': './app',
+      '@/app/utils': './app/utils'
     }
     config.resolve.fallback = {
       ...config.resolve.fallback,

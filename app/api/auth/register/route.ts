@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { hash } from '@node-rs/bcrypt'
+import * as argon2 from 'argon2'
 
 export const runtime = 'edge'
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
       return new NextResponse('User already exists', { status: 409 })
     }
 
-    const hashedPassword = await hash(password, 10)
+    const hashedPassword = await argon2.hash(password)
     const user = await prisma.user.create({
       data: {
         email,
