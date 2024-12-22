@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getUserByEmail } from '@/lib/db'
+import { prisma } from '../../../../lib/prisma'
 
 export async function POST(request: Request) {
   try {
     const { email } = await request.json()
-    const user = await getUserByEmail(email)
+    const user = await prisma.user.findUnique({ where: { email } })
     return NextResponse.json({ exists: !!user })
   } catch (error) {
     console.error('Error checking user:', error)
