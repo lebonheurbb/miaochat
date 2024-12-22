@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
-import { verify } from '@node-rs/bcrypt'
+import * as argon2 from 'argon2'
 
 export const runtime = 'edge'
 
@@ -26,7 +26,7 @@ const handler = NextAuth({
           return null
         }
 
-        const isValid = await verify(credentials.password, user.password)
+        const isValid = await argon2.verify(user.password, credentials.password)
 
         if (!isValid) {
           return null

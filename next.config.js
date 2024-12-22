@@ -2,10 +2,12 @@
 const nextConfig = {
   reactStrictMode: false,
   images: {
-    domains: ['*'],
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['bcrypt']
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*',
+      },
+    ],
   },
   async headers() {
     return [
@@ -30,6 +32,7 @@ const nextConfig = {
       stream: require.resolve('stream-browserify'),
       util: require.resolve('util/'),
     }
+
     return config
   },
 }
