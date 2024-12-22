@@ -48,6 +48,9 @@ export async function POST(
     })
 
     const aiResponse = await generateResponse(message)
+    if (!aiResponse) {
+      throw new Error('AI响应为空')
+    }
     
     const aiMessage = await prisma.message.create({
       data: {
