@@ -2,6 +2,9 @@
   "name": "web01",
   "version": "0.1.0",
   "private": true,
+  "prisma": {
+    "binaryTargets": ["native", "linux-arm64-openssl-1.1.x"]
+  },
   "scripts": {
     "dev": "next dev -p 3000 -H 0.0.0.0",
     "build": "next build",
