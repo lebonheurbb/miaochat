@@ -1,7 +1,7 @@
 import NextAuth, { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '../../../../lib/prisma'
-import * as argon2 from 'argon2'
+import { compareSync } from 'bcryptjs'
 
 export const runtime = 'edge'
 
@@ -26,7 +26,7 @@ export const authOptions: AuthOptions = {
           return null
         }
 
-        const isValid = await argon2.verify(user.password, credentials.password)
+        const isValid = compareSync(credentials.password, user.password)
 
         if (!isValid) {
           return null
