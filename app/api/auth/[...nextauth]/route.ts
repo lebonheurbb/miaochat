@@ -1,53 +1,66 @@
-import NextAuth, { AuthOptions } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
+import { NextResponse } from 'next/server'
 import { prisma } from '../../../../lib/prisma'
 import { compareSync } from 'bcryptjs'
+import { SignJWT } from 'jose'
 
 export const runtime = 'edge'
 
-export const authOptions: AuthOptions = {
-  providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-super-secret-key-change-this')
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+export async function POST(req: Request) {
+  try {
+    const { email, password } = await req.json()
 
-        if (!user) {
-          return null
-        }
+    if (!email || !password) {
+      return NextResponse.json(
+        { error: 'Missing credentials' },
+        { status: 400 }
+      )
+    }
 
-        const isValid = compareSync(credentials.password, user.password)
-
-        if (!isValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        }
-      }
+    const user = await prisma.user.findUnique({
+      where: { email }
     })
-  ],
-  session: {
-    strategy: 'jwt' as const
-  },
-  pages: {
-    signIn: '/login'
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const isValid = compareSync(password, user.password)
+
+    if (!isValid) {
+      return NextResponse.json(
+        { error: 'Invalid credentials' },
+        { status: 401 }
+      )
+    }
+
+    const token = await new SignJWT({ 
+      id: user.id,
+      email: user.email,
+      name: user.name
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret)
+
+    return NextResponse.json({ 
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      },
+      token
+    })
+  } catch (error) {
+    console.error('Authentication error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
-}
-
-const handler = NextAuth(authOptions)
-
-export { handler as GET, handler as POST } 
+} 
