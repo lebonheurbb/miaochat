@@ -1,22 +1,26 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import * as argon2 from 'argon2'
+import { hashSync } from 'bcryptjs'
 
 export const runtime = 'edge'
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { email, password, name } = await request.json()
+    const { email, password, name } = await req.json()
 
     const existingUser = await prisma.user.findUnique({
       where: { email }
     })
 
     if (existingUser) {
-      return new NextResponse('User already exists', { status: 409 })
+      return NextResponse.json(
+        { error: 'User already exists' },
+        { status: 400 }
+      )
     }
 
-    const hashedPassword = await argon2.hash(password)
+    const hashedPassword = hashSync(password, 10)
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -26,12 +30,17 @@ export async function POST(request: Request) {
     })
 
     return NextResponse.json({ 
-      id: user.id,
-      email: user.email,
-      name: user.name
-    }, { status: 201 })
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name
+      }
+    })
   } catch (error) {
     console.error('Registration error:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 } 
