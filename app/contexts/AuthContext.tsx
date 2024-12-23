@@ -14,6 +14,7 @@ interface AuthContextType {
   login: (email: string) => Promise<void>
   logout: () => void
   updateProfile: (data: Partial<User>) => void
+  register: (email: string, password: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,6 +29,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(JSON.parse(savedUser))
     }
   }, [])
+
+  const register = async (email: string, password: string) => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Registration failed')
+      }
+
+      const data = await response.json()
+      const newUser = {
+        email: data.user.email,
+        nickname: data.user.name,
+      }
+      
+      setUser(newUser)
+      localStorage.setItem('user', JSON.stringify(newUser))
+    } catch (error) {
+      console.error('Registration error:', error)
+      throw error
+    }
+  }
 
   const login = async (email: string) => {
     // 模拟登录请求
@@ -52,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateProfile }}>
+    <AuthContext.Provider value={{ user, login, logout, updateProfile, register }}>
       {children}
     </AuthContext.Provider>
   )

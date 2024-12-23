@@ -38,6 +38,10 @@ const nextConfig = {
       crypto: require.resolve('crypto-browserify'),
       stream: require.resolve('stream-browserify'),
       util: require.resolve('util/'),
+      vm: false,
+      fs: false,
+      net: false,
+      tls: false
     }
     return config
   },

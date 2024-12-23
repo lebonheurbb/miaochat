@@ -22,14 +22,21 @@ export async function middleware(request: NextRequest) {
     
     // 添加用户信息到请求头
     const requestHeaders = new Headers(request.headers)
-    requestHeaders.set('x-user-id', payload.id as string)
-    requestHeaders.set('x-user-email', payload.email as string)
+    requestHeaders.set('x-user-id', payload.userId as string)
 
-    return NextResponse.next({
+    // 克隆请求对象并添加修改后的头部
+    const response = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     })
+
+    // 添加 CORS 头部
+    response.headers.set('Access-Control-Allow-Origin', '*')
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+    return response
   } catch (error) {
     return NextResponse.json(
       { error: '登录已过期喵~' },
@@ -41,6 +48,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/api/chats/:path*',
-    '/api/stats/:path*'
+    '/api/stats/:path*',
+    '/api/messages/:path*'
   ]
 } 
