@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../../auth/[...nextauth]/route'
+import { headers } from 'next/headers'
 import { prisma } from '../../../../lib/prisma'
+
+export const runtime = 'edge'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const headersList = headers()
+    const userId = headersList.get('x-user-id')
+    
+    if (!userId) {
       return NextResponse.json(
         { error: '请先登录喵~' },
         { status: 401 }
@@ -19,7 +22,7 @@ export async function GET(
     const chat = await prisma.chat.findUnique({
       where: {
         id: params.id,
-        userId: session.user.email,
+        userId,
       },
       include: {
         messages: {
@@ -52,8 +55,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const headersList = headers()
+    const userId = headersList.get('x-user-id')
+    
+    if (!userId) {
       return NextResponse.json(
         { error: '请先登录喵~' },
         { status: 401 }
@@ -63,7 +68,7 @@ export async function DELETE(
     const chat = await prisma.chat.findUnique({
       where: {
         id: params.id,
-        userId: session.user.email,
+        userId,
       },
     })
 

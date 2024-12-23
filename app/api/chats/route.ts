@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '../auth/[...nextauth]/route'
+import { headers } from 'next/headers'
 import { prisma } from '../../../lib/prisma'
+
+export const runtime = 'edge'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const headersList = headers()
+    const userId = headersList.get('x-user-id')
+    
+    if (!userId) {
       return NextResponse.json(
         { error: '请先登录喵~' },
         { status: 401 }
@@ -15,7 +18,7 @@ export async function GET() {
 
     const chats = await prisma.chat.findMany({
       where: {
-        userId: session.user.email,
+        userId,
       },
       include: {
         messages: {
@@ -41,8 +44,10 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
+    const headersList = headers()
+    const userId = headersList.get('x-user-id')
+    
+    if (!userId) {
       return NextResponse.json(
         { error: '请先登录喵~' },
         { status: 401 }
@@ -51,7 +56,7 @@ export async function POST() {
 
     const chat = await prisma.chat.create({
       data: {
-        userId: session.user.email,
+        userId,
       },
     })
 
