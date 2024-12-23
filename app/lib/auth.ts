@@ -1,52 +1,27 @@
-import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { prisma } from './db'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
+import { jwtVerify, SignJWT } from 'jose'
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    CredentialsProvider({
-      name: 'credentials',
-      credentials: {
-        email: { label: 'Email', type: 'text' },
-        password: { label: 'Password', type: 'password' }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+const secret = new TextEncoder().encode(
+  process.env.JWT_SECRET || 'your-super-secret-key-change-this'
+)
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
-        })
+export async function verifyToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, secret)
+    return payload
+  } catch (error) {
+    return null
+  }
+}
 
-        if (!user) {
-          return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name
-        }
-      }
-    })
-  ],
-  session: {
-    strategy: 'jwt'
-  },
-  pages: {
-    signIn: '/login'
+export async function signToken(payload: any) {
+  try {
+    const token = await new SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setExpirationTime('24h')
+      .sign(secret)
+    return token
+  } catch (error) {
+    return null
   }
 } 
