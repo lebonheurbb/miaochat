@@ -18,6 +18,19 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
+    // 验证邮箱格式
+    if (!email || !email.includes('@')) {
+      setError('请输入有效的邮箱地址')
+      return
+    }
+
+    // 验证密码长度
+    if (!password || password.length < 6) {
+      setError('密码长度至少为6位')
+      return
+    }
+
+    // 验证密码匹配
     if (password !== confirmPassword) {
       setError('两次输入的密码不一致')
       return
@@ -28,8 +41,9 @@ export default function RegisterPage() {
     try {
       await register(email, password)
       router.push('/chat')
-    } catch (err) {
-      setError('注册失败，请稍后重试')
+    } catch (err: any) {
+      console.error('Registration error:', err)
+      setError(err?.message || '注册失败，请稍后重试')
     } finally {
       setLoading(false)
     }
@@ -46,6 +60,12 @@ export default function RegisterPage() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-[#151820] py-8 px-4 shadow-xl border border-[#1E2330] rounded-2xl sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                <p className="text-sm text-red-400">{error}</p>
+              </div>
+            )}
+            
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-[#8B95A5]">
                 邮箱地址
@@ -53,13 +73,11 @@ export default function RegisterPage() {
               <div className="mt-1">
                 <input
                   id="email"
-                  name="email"
                   type="email"
-                  autoComplete="email"
-                  required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#0F1115] text-white placeholder-[#4A5568] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#1A1B1E] text-white placeholder-[#8B95A5] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
                   placeholder="your@email.com"
                 />
               </div>
@@ -72,46 +90,38 @@ export default function RegisterPage() {
               <div className="mt-1">
                 <input
                   id="password"
-                  name="password"
                   type="password"
-                  autoComplete="new-password"
-                  required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#0F1115] text-white placeholder-[#4A5568] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
-                  placeholder="••••••••"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#1A1B1E] text-white placeholder-[#8B95A5] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
+                  placeholder="至少6位字符"
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-[#8B95A5]">
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#8B95A5]">
                 确认密码
               </label>
               <div className="mt-1">
                 <input
-                  id="confirm-password"
-                  name="confirm-password"
+                  id="confirmPassword"
                   type="password"
-                  autoComplete="new-password"
-                  required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#0F1115] text-white placeholder-[#4A5568] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
-                  placeholder="••••••••"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-[#1E2330] rounded-lg bg-[#1A1B1E] text-white placeholder-[#8B95A5] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent sm:text-sm"
+                  placeholder="再次输入密码"
                 />
               </div>
             </div>
-
-            {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
-            )}
 
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 hover:scale-[1.02]"
+                className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-cyan-500 hover:from-violet-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {loading ? '注册中...' : '注册'}
               </button>

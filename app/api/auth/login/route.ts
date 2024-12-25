@@ -1,58 +1,69 @@
 import { NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
-import { prisma } from '@/lib/prisma'
-import { sign } from 'jsonwebtoken'
+import prisma from '@/app/lib/db'
+import { cookies } from 'next/headers'
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const { email, password } = await request.json()
-    
+    const { email, password } = await req.json()
+
     // 验证邮箱格式
     if (!email || !email.includes('@')) {
       return NextResponse.json(
-        { error: '邮箱格式不正确' },
+        { error: '请输入有效的邮箱地址' },
+        { status: 400 }
+      )
+    }
+
+    // 验证密码是否存在
+    if (!password) {
+      return NextResponse.json(
+        { error: '请输入密码' },
         { status: 400 }
       )
     }
 
     // 查找用户
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        nickname: true,
+        avatarUrl: true,
+        points: true,
+      }
     })
 
     if (!user) {
       return NextResponse.json(
         { error: '用户不存在' },
-        { status: 404 }
+        { status: 400 }
       )
     }
 
     // 验证密码
     const isValid = await compare(password, user.password)
-    
     if (!isValid) {
       return NextResponse.json(
         { error: '密码错误' },
-        { status: 401 }
+        { status: 400 }
       )
     }
 
-    // 生成 JWT token
-    const token = sign(
-      { userId: user.id },
-      process.env.JWT_SECRET!,
-      { expiresIn: '7d' }
-    )
+    // 返回用户信息（不包含密码）
+    const { password: _, ...userWithoutPassword } = user
 
-    // 返回用户信息（不包含密码）和token
-    return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        nickname: user.nickname
-      },
-      token
+    // 设置cookie
+    cookies().set('user', JSON.stringify(userWithoutPassword), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 // 30 days
     })
+
+    return NextResponse.json(userWithoutPassword)
 
   } catch (error) {
     console.error('Login error:', error)

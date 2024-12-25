@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const { login, user } = useAuth()
@@ -20,11 +22,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!email) return
+    if (!email || !password) return
     
     try {
       setLoading(true)
-      await login(email)
+      await login(email, password)
       router.push('/chat')
     } catch (error) {
       console.error('Login failed:', error)
@@ -39,13 +41,15 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Google Logo */}
         <div className="flex justify-center mb-8">
-          <Image
-            src="/google.svg"
-            alt="Google"
-            width={75}
-            height={75}
-            priority
-          />
+          <div className="relative w-[75px] h-[75px]">
+            <Image
+              src="/google.svg"
+              alt="Google"
+              fill
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </div>
         </div>
 
         {/* 登录标题 */}
@@ -70,6 +74,16 @@ export default function LoginPage() {
               required
             />
           </div>
+          <div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="密码"
+              className="w-full px-4 py-3 bg-[#303134] text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
           <button
             type="submit"
             disabled={loading}
@@ -78,6 +92,28 @@ export default function LoginPage() {
             {loading ? '登录中...' : '登录'}
           </button>
         </form>
+
+        {/* 分割线 */}
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#303134]"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-[#1A1B1E] text-[#9AA0A6]">或者</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 注册链接 */}
+        <div className="mt-6 text-center">
+          <Link
+            href="/register"
+            className="text-[#0B57D0] hover:text-[#0842A0] transition-colors"
+          >
+            创建新账号
+          </Link>
+        </div>
       </div>
     </div>
   )

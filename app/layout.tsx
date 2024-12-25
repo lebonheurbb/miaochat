@@ -1,7 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { AuthProvider } from './contexts/AuthContext'
-import { headers } from 'next/headers'
 
 export const metadata: Metadata = {
   title: '喵哥 AI - 智能对话助手',

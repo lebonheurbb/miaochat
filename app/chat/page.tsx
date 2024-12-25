@@ -334,53 +334,67 @@ export default function ChatPage() {
           
           {/* 个人信息头像和下拉菜单 */}
           <div className="relative" ref={userMenuRef}>
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden hover:ring-2 hover:ring-gray-500 transition-all"
-            >
-              {user?.avatarUrl ? (
-                <Image
-                  src={user.avatarUrl}
-                  alt="用户头像"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-sm">
-                  {user?.email?.[0].toUpperCase() || '?'}
-                </div>
-              )}
-            </button>
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#1E2330] rounded-lg text-sm">
+                <span className="text-[#9AA0A6]">积分</span>
+                <span className="font-medium text-white">
+                  {user?.points ?? 0}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden hover:ring-2 hover:ring-gray-500 transition-all"
+              >
+                {user?.avatarUrl ? (
+                  <Image
+                    src={user.avatarUrl}
+                    alt="用户头像"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-cover"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-sm">
+                    {user?.email?.[0].toUpperCase() || '?'}
+                  </div>
+                )}
+              </button>
+            </div>
 
             {/* 下拉菜单 */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-80 backdrop-blur-xl bg-[#202124]/80 rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)] overflow-hidden z-50">
+              <div className="absolute right-0 mt-2 w-96 backdrop-blur-xl bg-[#202124]/80 rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)] overflow-hidden z-50">
                 {/* 用户信息部分 */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 rounded-full overflow-hidden">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
                         {user?.avatarUrl ? (
                           <Image
                             src={user.avatarUrl}
                             alt="用户头像"
                             width={48}
                             height={48}
-                            className="w-full h-full object-cover"
+                            className="w-12 h-12 object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-lg">
+                          <div className="w-12 h-12 bg-[#9AA0A6] flex items-center justify-center text-[#1A1B1E] text-lg">
                             {user?.email?.[0].toUpperCase() || '?'}
                           </div>
                         )}
                       </div>
-                      <div>
+                      <div className="flex flex-col gap-0.5">
                         <div className="text-white font-medium">
                           {user?.nickname || user?.email?.split('@')[0]}
                         </div>
                         <div className="text-sm text-gray-400">
                           {user?.email}
+                        </div>
+                        <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#1E2330] rounded-lg text-sm mt-1">
+                          <span className="text-[#9AA0A6]">积分</span>
+                          <span className="font-medium text-white">
+                            {user?.points ?? 0}
+                          </span>
                         </div>
                       </div>
                     </div>
