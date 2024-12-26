@@ -90,18 +90,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
+      const data = await response.json()
+      
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || '登录失败')
+        throw new Error(data.error)
       }
 
-      const userData = await response.json()
-      setUser(userData)
-      localStorage.setItem('user', JSON.stringify(userData))
-      await refreshUser()
+      setUser(data)
+      return data
     } catch (error) {
-      console.error('Login error:', error)
-      throw error
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error('登录失败，请稍后重试')
     }
   }
 

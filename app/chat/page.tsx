@@ -289,7 +289,7 @@ export default function ChatPage() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: formatResponse('抱歉，本喵遇到了一点小问题，请稍后再试~')
+        content: formatResponse('抱歉，本��遇到了一点小问题，请稍后再试~')
       };
       
       setChats(prev => prev.map(chat => {
@@ -370,7 +370,7 @@ export default function ChatPage() {
   useEffect(() => {
     const updateBottomSpace = () => {
       const inputHeight = inputAreaRef.current?.getBoundingClientRect().height || 0;
-      setBottomSpaceHeight(inputHeight + 20); // 从 100 改为 20，减小额外的缓冲空间
+      setBottomSpaceHeight(inputHeight + 20); // 从 100 改为 20���减小额外的缓冲空间
     };
 
     updateBottomSpace();
@@ -403,6 +403,37 @@ export default function ChatPage() {
       document.removeEventListener('touchstart', handleClickOutside as EventListener);
     };
   }, [sidebarOpen]);
+
+  // 添加从 localStorage 加载聊天记录的逻辑
+  useEffect(() => {
+    const savedChats = localStorage.getItem('chats');
+    const savedCurrentChatId = localStorage.getItem('currentChatId');
+    
+    if (savedChats) {
+      try {
+        setChats(JSON.parse(savedChats));
+      } catch (error) {
+        console.error('Failed to parse saved chats:', error);
+      }
+    }
+    
+    if (savedCurrentChatId) {
+      setCurrentChatId(savedCurrentChatId);
+    }
+  }, []);
+
+  // 添加保存聊天记录到 localStorage 的逻辑
+  useEffect(() => {
+    if (chats.length > 0) {
+      localStorage.setItem('chats', JSON.stringify(chats));
+    }
+  }, [chats]);
+
+  useEffect(() => {
+    if (currentChatId) {
+      localStorage.setItem('currentChatId', currentChatId);
+    }
+  }, [currentChatId]);
 
   return (
     <div className="flex h-screen bg-[#1A1B1E] overflow-hidden">
@@ -613,7 +644,7 @@ export default function ChatPage() {
         {/* 消息列表区域 */}
         <div 
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto pt-14 scroll-smooth"
+          className="flex-1 overflow-y-auto pt-14 pb-4 scroll-smooth"
         >
           {currentMessages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-4">
@@ -638,17 +669,15 @@ export default function ChatPage() {
               {currentMessages.map((msg, index) => (
                 <div 
                   key={msg.id} 
-                  className="group transition-all duration-300 ease-out"
+                  className="group transition-all duration-300 ease-out opacity-0 transform translate-y-4"
                   style={{
-                    opacity: 0,
-                    transform: 'translateY(10px)',
                     animation: `fadeSlideIn 0.3s ease-out ${index * 0.05}s forwards`
                   }}
                 >
                   <div className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       {msg.role === 'assistant' ? (
-                        <span className="text-2xl"></span>
+                        <span className="text-2xl">🐱</span>
                       ) : (
                         user?.avatarUrl ? (
                           <Image

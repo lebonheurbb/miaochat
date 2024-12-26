@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     const isValid = await compare(password, user.password)
     if (!isValid) {
       return NextResponse.json(
-        { error: '密码错误' },
+        { error: '密码错误，请重新输入' },
         { status: 400 }
       )
     }

@@ -57,9 +57,8 @@ export async function POST(req: Request) {
     await prisma.pointsHistory.create({
       data: {
         userId: user.id,
-        amount: 50,
-        type: 'REGISTER',
-        description: '注册赠送积分'
+        points: 50,
+        reason: '注册赠送积分'
       }
     })
 

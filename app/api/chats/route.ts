@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { prisma } from '../../../lib/prisma'
-
-export const runtime = 'edge'
+import prisma from '@/app/lib/db'
 
 export async function GET() {
   try {

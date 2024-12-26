@@ -3,6 +3,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"] // 启用客户端扩展功能
 }
 
 // 使用 SQLite 数据库，数据存在 dev.db 文件中
@@ -11,56 +12,94 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// 用户信息表
-// 存储用户的基本信息，比如邮箱、密码等
-model User {
-  id        String   @id @default(cuid())     // 用户的唯一标识，像身份证号
-  email     String   @unique                  // 邮箱地址，不能重复
-  password  String                            // 密码
-  nickname  String?                           // 昵称（可选）
-  bio       String?  @default("")             // 个人简介（可选）
-  avatarUrl String?                           // 头像图片地址（可选）
-  points    Int      @default(50)             // 积分，新用户默认50分
-  createdAt DateTime @default(now())          // 注册时间
-  updatedAt DateTime @updatedAt               // 最后更新时间
-  
-  // 关联其他表的数据
-  chats     Chat[]                           // 用户的所��聊天记录
-  pointsHistory PointsHistory[]              // 用户的积分变动历史
+// 聊天记录表
+/// @description 存储所有的聊天对话
+model Chat {
+  /// @description 聊天的唯一编号，每个聊天都不一样
+  id        String    @id @default(cuid())
+  /// @description 聊天的标题，比如"和机器人的第一次对话"
+  title     String    @default("新对话")
+  /// @description 这个聊天中的所有消息记录
+  messages  Message[]
+  /// @description 谁发起的这个聊天
+  user      User      @relation(fields: [userId], references: [id])
+  /// @description 聊天主人的编号
+  userId    String
+  /// @description 什么时候创建的这个聊天
+  createdAt DateTime  @default(now()) @map("created_at")
+  /// @description 最后一次更新是什么时候
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  @@map("chats") // 表的实际名称
 }
 
-// 聊天记录表
-// 存储用户的聊天会话信息
-model Chat {
-  id        String    @id @default(cuid())    // 聊天的唯一标识
-  title     String    @default("新对话")      // 聊天标题
-  messages  Message[]                         // 包含的所有消息
-  user      User      @relation(fields: [userId], references: [id])  // 关联到用户
-  userId    String                            // 所属用户的ID
-  createdAt DateTime  @default(now())         // 创建时间
-  updatedAt DateTime  @updatedAt              // 最后更新时间
+// 用户信息表
+/// @description 存储所有使用这个系统的人的信息
+model User {
+  /// @description 用户的唯一编号，就像身份证号一样
+  id        String   @id @default(cuid())
+  /// @description 用户的电子邮箱，用来登录
+  email     String   @unique
+  /// @description 用户的密码，要保密哦
+  password  String
+  /// @description 用户的昵称，比如"快乐的小明"
+  nickname  String?
+  /// @description 用户的自我介绍
+  bio       String?  @default("")
+  /// @description 用户的头像图片地址
+  avatarUrl String?  @map("avatar_url")
+  /// @description 用户的积分，可以用来兑换服务
+  points    Int      @default(50)
+  /// @description 用户是什么时候注册的
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @description 用户最后一次更新信息是什么时候
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // 关联其他表的数据
+  /// @description 用户的所有聊天记录
+  chats     Chat[]
+  /// @description 用户的积分变动记录
+  pointsHistory PointsHistory[]
+
+  @@map("users") // 表的实际名称
 }
 
 // 消息表
-// 存储聊天中的具体消息
+/// @description 存储聊天中的每一条消息
 model Message {
-  id        String   @id @default(cuid())     // 消息的唯一标识
-  content   String                            // 消息内容
-  role      String   @default("user")         // 消息发送者的角色（用户/AI）
-  chat      Chat     @relation(fields: [chatId], references: [id])  // 关联到聊天
-  chatId    String                            // 所属聊天的ID
-  createdAt DateTime @default(now())          // 发送时间
-  updatedAt DateTime @updatedAt               // 最后更新时间
+  /// @description 消息的唯一编号
+  id        String   @id @default(cuid())
+  /// @description 消息的内容，比如"你好啊"
+  content   String
+  /// @description 谁发送的消息：用户还是机器人
+  role      String   @default("user")
+  /// @description 这条消息属于哪个聊天
+  chat      Chat     @relation(fields: [chatId], references: [id])
+  /// @description 聊天的编号
+  chatId    String
+  /// @description 消息是什么时候发送的
+  createdAt DateTime @default(now()) @map("created_at")
+  /// @description 消息最后一次更新是什么时候
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("messages") // 表的实际名称
 }
 
 // 积分历史表
-// 记录用户积分的变动情况
+/// @description 记录用户积分是怎么变化的
 model PointsHistory {
-  id          String   @id @default(cuid())   // 记录的唯一标识
-  user        User     @relation(fields: [userId], references: [id])  // 关联到用户
-  userId      String                          // 所属用户的ID
-  amount      Int                             // 变动的积分数量（可以是正数或负数）
-  type        String                          // 变动类型（例如：签到奖励、使用服务）
-  description String                          // 变动说明（例如：每日签到奖励5积分）
-  createdAt   DateTime @default(now())        // 记录时间
+  /// @description 记录的唯一编号
+  id          String   @id @default(cuid())
+  /// @description 这条记录属于哪个用户
+  user        User     @relation(fields: [userId], references: [id])
+  /// @description 用户的编号
+  userId      String
+  /// @description 积分变化了多少，可以是加分也可以是减分
+  points      Int
+  /// @description 为什么会有这次积分变化，比如"签到奖励"
+  reason      String
+  /// @description 什么时候发生的这次积分变化
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("points_history") // 表的实际名称
 } 

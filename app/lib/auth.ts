@@ -1,5 +1,5 @@
 import { jwtVerify, SignJWT } from 'jose'
-import { prisma } from './db'
+import prisma from './db'
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-super-secret-key-change-this'
