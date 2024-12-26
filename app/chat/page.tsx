@@ -253,7 +253,8 @@ export default function ChatPage() {
         },
         body: JSON.stringify({
           prompt: message.trim(),
-          image
+          image,
+          messages: currentChat?.messages || []  // 添加历史消息
         }),
       });
 
@@ -261,7 +262,7 @@ export default function ChatPage() {
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: formatResponse(data.content || '哎呀，本喵突然有点累了，待会再回答你喵~')
+        content: formatResponse(data.message || '哎呀，本喵突然有点累了，待会再回答你喵~')
       };
 
       // 更新聊天记录
@@ -466,7 +467,7 @@ export default function ChatPage() {
                 {user?.avatarUrl ? (
                   <Image
                     src={user.avatarUrl}
-                    alt="用户头像"
+                    alt="��户头像"
                     width={32}
                     height={32}
                     className="w-8 h-8 object-cover"
@@ -609,7 +610,7 @@ export default function ChatPage() {
                         user?.avatarUrl ? (
                           <Image
                             src={user.avatarUrl}
-                            alt="用户头像"
+                            alt="用���头像"
                             width={32}
                             height={32}
                             className="rounded-full"
@@ -672,7 +673,7 @@ export default function ChatPage() {
                     <div className="flex-1 space-y-1">
                       <div className="text-[14px] text-[#9AA0A6]">{AI_CONFIG.name}</div>
                       <div className="text-[#9AA0A6] text-[16px] flex items-center space-x-2">
-                        <span className="animate-pulse">思考中</span>
+                        <span className="animate-pulse">思���中</span>
                         <LoadingDots />
                       </div>
                     </div>
