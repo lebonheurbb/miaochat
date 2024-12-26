@@ -1,38 +1,66 @@
+// 这是数据库的设计图，就像是一个建房子的蓝图
+// 下面定义了我们需要存储的各种信息
+
 generator client {
   provider = "prisma-client-js"
 }
 
+// 使用 SQLite 数据库，数据存在 dev.db 文件中
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
+// 用户信息表
+// 存储用户的基本信息，比如邮箱、密码等
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  name      String?
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  chats     Chat[]
+  id        String   @id @default(cuid())     // 用户的唯一标识，像身份证号
+  email     String   @unique                  // 邮箱地址，不能重复
+  password  String                            // 密码
+  nickname  String?                           // 昵称（可选）
+  bio       String?  @default("")             // 个人简介（可选）
+  avatarUrl String?                           // 头像图片地址（可选）
+  points    Int      @default(50)             // 积分，新用户默认50分
+  createdAt DateTime @default(now())          // 注册时间
+  updatedAt DateTime @updatedAt               // 最后更新时间
+  
+  // 关联其他表的数据
+  chats     Chat[]                           // 用户的所��聊天记录
+  pointsHistory PointsHistory[]              // 用户的积分变动历史
 }
 
+// 聊天记录表
+// 存储用户的聊天会话信息
 model Chat {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  messages  Message[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id        String    @id @default(cuid())    // 聊天的唯一标识
+  title     String    @default("新对话")      // 聊天标题
+  messages  Message[]                         // 包含的所有消息
+  user      User      @relation(fields: [userId], references: [id])  // 关联到用户
+  userId    String                            // 所属用户的ID
+  createdAt DateTime  @default(now())         // 创建时间
+  updatedAt DateTime  @updatedAt              // 最后更新时间
 }
 
+// 消息表
+// 存储聊天中的具体消息
 model Message {
-  id        String   @id @default(cuid())
-  content   String
-  chatId    String
-  chat      Chat     @relation(fields: [chatId], references: [id])
-  role      String   @default("user")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())     // 消息的唯一标识
+  content   String                            // 消息内容
+  role      String   @default("user")         // 消息发送者的角色（用户/AI）
+  chat      Chat     @relation(fields: [chatId], references: [id])  // 关联到聊天
+  chatId    String                            // 所属聊天的ID
+  createdAt DateTime @default(now())          // 发送时间
+  updatedAt DateTime @updatedAt               // 最后更新时间
+}
+
+// 积分历史表
+// 记录用户积分的变动情况
+model PointsHistory {
+  id          String   @id @default(cuid())   // 记录的唯一标识
+  user        User     @relation(fields: [userId], references: [id])  // 关联到用户
+  userId      String                          // 所属用户的ID
+  amount      Int                             // 变动的积分数量（可以是正数或负数）
+  type        String                          // 变动类型（例如：签到奖励、使用服务）
+  description String                          // 变动说明（例如：每日签到奖励5积分）
+  createdAt   DateTime @default(now())        // 记录时间
 } 

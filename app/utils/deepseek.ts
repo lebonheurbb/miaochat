@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
 
 const client = new OpenAI({
-  apiKey: 'sk-c5f13a32204648e4b6993db1d666fd57',
-  baseURL: 'https://api.deepseek.com',
-  dangerouslyAllowBrowser: true
+  apiKey: process.env.DEEPSEEK_API_KEY || 'sk-c5f13a32204648e4b6993db1d666fd57',
+  baseURL: 'https://api.deepseek.com/v1',
 });
 
 export async function generateResponse(prompt: string) {
@@ -11,10 +10,17 @@ export async function generateResponse(prompt: string) {
     const completion = await client.chat.completions.create({
       model: "deepseek-chat",
       messages: [
-        { role: "system", content: "你是一个有用的助手，名字叫喵哥。" },
-        { role: "user", content: prompt }
+        { 
+          role: "system", 
+          content: "你是一个有用的助手，名字叫喵哥。请用友好、活泼的语气回答问题，每句话结尾都要加上'喵~'"
+        },
+        { 
+          role: "user", 
+          content: prompt 
+        }
       ],
-      stream: false
+      temperature: 0.7,
+      max_tokens: 2048
     });
 
     return completion.choices[0].message.content;

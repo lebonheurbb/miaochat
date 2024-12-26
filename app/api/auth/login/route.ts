@@ -1,36 +1,75 @@
 import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { SignJWT } from 'jose'
-import { prisma } from '@/lib/prisma'
-import { compareSync } from 'bcryptjs'
+import { compare } from 'bcryptjs'
+import prisma from '@/app/lib/db'
+import { cookies } from 'next/headers'
 
-export const runtime = 'edge'
-
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
-
-export async function POST(request: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, password } = await request.json()
+    const { email, password } = await req.json()
 
-    const user = await prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (!user || !compareSync(password, user.password)) {
-      return new NextResponse('Invalid credentials', { status: 401 })
+    // 验证邮箱格式
+    if (!email || !email.includes('@')) {
+      return NextResponse.json(
+        { error: '请输入有效的邮箱地址' },
+        { status: 400 }
+      )
     }
 
-    const token = await new SignJWT({ userId: user.id })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('24h')
-      .sign(JWT_SECRET)
+    // 验证密码是否存在
+    if (!password) {
+      return NextResponse.json(
+        { error: '请输入密码' },
+        { status: 400 }
+      )
+    }
 
-    return new NextResponse(JSON.stringify({ token }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
+    // 查找用户
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        password: true,
+        nickname: true,
+        avatarUrl: true,
+        points: true,
+      }
     })
+
+    if (!user) {
+      return NextResponse.json(
+        { error: '用户不存在' },
+        { status: 400 }
+      )
+    }
+
+    // 验证密码
+    const isValid = await compare(password, user.password)
+    if (!isValid) {
+      return NextResponse.json(
+        { error: '密码错误' },
+        { status: 400 }
+      )
+    }
+
+    // 返回用户信息（不包含密码）
+    const { password: _, ...userWithoutPassword } = user
+
+    // 设置cookie
+    cookies().set('user', JSON.stringify(userWithoutPassword), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 // 30 days
+    })
+
+    return NextResponse.json(userWithoutPassword)
+
   } catch (error) {
     console.error('Login error:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return NextResponse.json(
+      { error: '登录失败，请稍后重试' },
+      { status: 500 }
+    )
   }
 } 

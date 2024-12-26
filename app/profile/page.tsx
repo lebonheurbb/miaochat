@@ -83,6 +83,14 @@ export default function ProfilePage() {
               />
             </div>
 
+            {/* 积分显示 */}
+            <div>
+              <label className="block text-sm font-medium text-[#9AA0A6] mb-1">积分</label>
+              <div className="w-full px-3 py-2 bg-[#1E1E1E] text-[#E3E3E3] rounded-lg text-sm">
+                {user.points || 0} 点
+              </div>
+            </div>
+
             {/* 昵称输入 */}
             <div>
               <label className="block text-sm font-medium text-[#9AA0A6] mb-1">用户名</label>
