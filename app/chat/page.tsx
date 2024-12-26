@@ -170,6 +170,11 @@ export default function ChatPage() {
 
   // 创建新对话
   const createNewChat = () => {
+    // 如果当前已经在新对话中（没有消息），则不创建
+    if (currentChat && currentChat.messages.length === 0) {
+      return;
+    }
+    
     const newChat: Chat = {
       id: Date.now().toString(),
       title: '新对话',
@@ -304,15 +309,26 @@ export default function ChatPage() {
 
   // 处理点击空白处关闭菜单
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      // 如果点击的是菜单按钮本身，不处理（让按钮的点击事件处理）
+      const menuButton = document.querySelector('[data-menu-button]');
+      if (menuButton && menuButton.contains(event.target as Node)) {
+        return;
+      }
+      
+      // 如果点击的是菜单内容之外的区域，关闭菜单
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    // 添加点击和触摸事件监听
+    document.addEventListener('mousedown', handleClickOutside as EventListener);
+    document.addEventListener('touchstart', handleClickOutside as EventListener);
+    
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mousedown', handleClickOutside as EventListener);
+      document.removeEventListener('touchstart', handleClickOutside as EventListener);
     };
   }, []);
 
@@ -362,10 +378,40 @@ export default function ChatPage() {
     return () => window.removeEventListener('resize', updateBottomSpace);
   }, []);
 
+  // 处理点击空白处关闭侧边栏
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      // 如果点击的是菜单按钮本身，不处理
+      const sidebarButton = document.querySelector('[data-sidebar-button]');
+      if (sidebarButton && sidebarButton.contains(event.target as Node)) {
+        return;
+      }
+      
+      // 如果点击的是侧边栏内容之外的区域，关闭侧边栏
+      const sidebar = document.querySelector('[data-sidebar]');
+      if (sidebarOpen && sidebar && !sidebar.contains(event.target as Node)) {
+        setSidebarOpen(false);
+      }
+    };
+
+    // 添加点击和触摸事件监听
+    document.addEventListener('mousedown', handleClickOutside as EventListener);
+    document.addEventListener('touchstart', handleClickOutside as EventListener);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside as EventListener);
+      document.removeEventListener('touchstart', handleClickOutside as EventListener);
+    };
+  }, [sidebarOpen]);
+
   return (
     <div className="flex h-screen bg-[#1A1B1E] overflow-hidden">
       {/* 侧边栏 */}
-      <div className={`fixed inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} w-64 bg-[#202124] transition-transform duration-300 ease-in-out z-30`}>
+      <div 
+        data-sidebar
+        className={`fixed inset-y-0 left-0 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+        w-[280px] sm:w-64 bg-[#202124] transition-transform duration-300 ease-in-out z-30`}
+      >
         <div className="flex flex-col h-full text-white">
           <div className="flex items-center p-4">
             <span className="text-xl font-semibold">Gemini</span>
@@ -437,9 +483,10 @@ export default function ChatPage() {
       {/* 主聊天区域 */}
       <div className="flex-1 flex flex-col h-screen">
         {/* 顶部导航栏 - 固定定位 */}
-        <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-4 bg-[#1A1B1E] z-20">
+        <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-2 sm:px-4 bg-[#1A1B1E] z-20">
           <div className="flex items-center">
             <button 
+              data-sidebar-button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="text-white p-2 hover:bg-[#303134] rounded-lg"
             >
@@ -447,27 +494,28 @@ export default function ChatPage() {
             </button>
             
             {currentChat && (
-              <span className="ml-4 text-white truncate">{currentChat.title}</span>
+              <span className="ml-4 text-white truncate max-w-[150px] sm:max-w-[300px]">{currentChat.title}</span>
             )}
           </div>
           
-          {/* 个人信息头像��下拉菜单 */}
+          {/* 个人信息头像和下拉菜单 */}
           <div className="relative" ref={userMenuRef}>
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#1E2330] rounded-lg text-sm">
+              <div className="hidden sm:flex items-center space-x-2 px-3 py-1.5 bg-[#1E2330] rounded-lg text-sm">
                 <span className="text-[#9AA0A6]">积分</span>
                 <span className="font-medium text-white">
                   {user?.points ?? 0}
                 </span>
               </div>
               <button
+                data-menu-button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center justify-center w-8 h-8 rounded-full overflow-hidden hover:ring-2 hover:ring-gray-500 transition-all"
               >
                 {user?.avatarUrl ? (
                   <Image
                     src={user.avatarUrl}
-                    alt="��户头像"
+                    alt="用户头像"
                     width={32}
                     height={32}
                     className="w-8 h-8 object-cover"
@@ -482,7 +530,7 @@ export default function ChatPage() {
 
             {/* 下拉菜单 */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-96 backdrop-blur-xl bg-[#202124]/80 rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)] overflow-hidden z-50">
+              <div className="absolute right-0 mt-2 w-[calc(100vw-32px)] sm:w-96 backdrop-blur-xl bg-[#202124]/80 rounded-2xl shadow-[0_0_10px_rgba(0,0,0,0.3)] overflow-hidden z-50">
                 {/* 用户信息部分 */}
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -566,16 +614,11 @@ export default function ChatPage() {
         <div 
           ref={messagesContainerRef}
           className="flex-1 overflow-y-auto pt-14 scroll-smooth"
-          style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#404144 transparent',
-            scrollBehavior: 'smooth'
-          }}
         >
           {currentMessages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-4">
               <div className="text-center space-y-4 animate-fade-in">
-                <h2 className="text-4xl">
+                <h2 className="text-2xl sm:text-4xl">
                   {mounted && (
                     <>
                       <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
@@ -585,13 +628,13 @@ export default function ChatPage() {
                     </>
                   )}
                 </h2>
-                <p className="text-[#9AA0A6] transition-all duration-200 ease-in-out">
+                <p className="text-sm sm:text-base text-[#9AA0A6] transition-all duration-200 ease-in-out">
                   {greeting || '让本喵猜猜...你一定是来找我解答人生难题的吧？不对吗？喵~'}
                 </p>
               </div>
             </div>
           ) : (
-            <div className="max-w-3xl mx-auto px-4 py-2 space-y-4">
+            <div className="max-w-3xl mx-auto px-2 sm:px-4 py-2 space-y-4">
               {currentMessages.map((msg, index) => (
                 <div 
                   key={msg.id} 
@@ -610,7 +653,7 @@ export default function ChatPage() {
                         user?.avatarUrl ? (
                           <Image
                             src={user.avatarUrl}
-                            alt="用���头像"
+                            alt="用户头像"
                             width={32}
                             height={32}
                             className="rounded-full"
@@ -637,7 +680,7 @@ export default function ChatPage() {
                             />
                           </div>
                         )}
-                        {/* 显示文本内容 */}
+                        {/* 显示本内容 */}
                         {msg.content.split('\n').map((paragraph, index) => (
                           <div 
                             key={index} 
@@ -673,7 +716,7 @@ export default function ChatPage() {
                     <div className="flex-1 space-y-1">
                       <div className="text-[14px] text-[#9AA0A6]">{AI_CONFIG.name}</div>
                       <div className="text-[#9AA0A6] text-[16px] flex items-center space-x-2">
-                        <span className="animate-pulse">思���中</span>
+                        <span className="animate-pulse">思考中</span>
                         <LoadingDots />
                       </div>
                     </div>
@@ -687,7 +730,7 @@ export default function ChatPage() {
         </div>
 
         {/* 输入框区域 */}
-        <div ref={inputAreaRef} className="fixed bottom-0 left-0 right-0">
+        <div ref={inputAreaRef} className="fixed bottom-0 left-0 right-0 px-2 sm:px-4">
           <div 
             className="h-[40px] bg-gradient-to-t from-[#1A1B1E] via-[#1A1B1E] to-transparent pointer-events-none"
             style={{
@@ -702,7 +745,7 @@ export default function ChatPage() {
               transform: shouldShift ? 'translateY(-10px)' : 'translateY(0)'
             }}
           >
-            <div className="max-w-3xl mx-auto px-4">
+            <div className="max-w-3xl mx-auto">
               <form onSubmit={handleSubmit} className="relative">
                 <div className="flex items-center gap-3 bg-[#303134] rounded-full pl-4 pr-3 hover:bg-[#404144] transition-colors">
                   <button
@@ -717,7 +760,7 @@ export default function ChatPage() {
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="问一问"
-                    className="flex-1 bg-transparent text-white py-3 focus:outline-none text-[16px]"
+                    className="flex-1 bg-transparent text-white py-3 focus:outline-none text-[14px] sm:text-[16px]"
                   />
                   <button
                     type="submit"
