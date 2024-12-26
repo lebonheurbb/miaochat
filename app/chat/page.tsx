@@ -1,47 +1,48 @@
-'use client'
+'use client';
 
-import { useState, useRef, useEffect } from 'react'
-import { generateResponse } from '../utils/deepseek'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { AI_CONFIG, getRandomGreeting, formatResponse } from '../utils/aiConfig'
-import { useAuth } from '../contexts/AuthContext'
-import Image from 'next/image'
-import { HiMenuAlt2, HiOutlineRefresh } from 'react-icons/hi'
-import { IoSettingsOutline, IoAdd } from 'react-icons/io5'
-import { BiHistory } from 'react-icons/bi'
-import { AiOutlineQuestionCircle } from 'react-icons/ai'
-import { BsImage, BsArrowRightCircleFill } from 'react-icons/bs'
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { generateResponse } from '../utils/gemini';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AI_CONFIG, getRandomGreeting, formatResponse } from '../utils/aiConfig';
+import { useAuth } from '../contexts/AuthContext';
+import Image from 'next/image';
+import { HiMenuAlt2, HiOutlineRefresh } from 'react-icons/hi';
+import { IoSettingsOutline, IoAdd } from 'react-icons/io5';
+import { BiHistory } from 'react-icons/bi';
+import { AiOutlineQuestionCircle } from 'react-icons/ai';
+import { BsImage, BsArrowRightCircleFill } from 'react-icons/bs';
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  image?: string;  // 添加图片支持
 }
 
 interface Chat {
-  id: string
-  title: string
-  messages: Message[]
-  lastUpdated: number
+  id: string;
+  title: string;
+  messages: Message[];
+  lastUpdated: number;
 }
 
 // 生成对话标题
 const generateTitle = async (messages: Message[]): Promise<string> => {
-  if (messages.length === 0) return '新对话'
+  if (messages.length === 0) return '新对话';
   
   // 获取最近的几条消息用于生成标题
-  const recentMessages = messages.slice(-3)
-  const prompt = `请用5个字以内总结这段对话的主题:\n${recentMessages.map(m => m.content).join('\n')}`
+  const recentMessages = messages.slice(-3);
+  const prompt = `请5�����以内总结这段对话的主题:\n${recentMessages.map(m => m.content).join('\n')}`;
   
   try {
-    const title = await generateResponse(prompt)
-    return title?.trim() || '新对话'
+    const title = await generateResponse(prompt);
+    return title?.trim() || '新对话';
   } catch (error) {
-    console.error('Failed to generate title:', error)
-    return '新对话'
+    console.error('Failed to generate title:', error);
+    return '新对话';
   }
-}
+};
 
 // 添加一个动态省略号组件
 const LoadingDots = () => {
@@ -60,56 +61,112 @@ const LoadingDots = () => {
   );
 };
 
+// 添加消息动画的 framer-motion 组件
+const messageVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring",
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
+
 export default function ChatPage() {
-  const router = useRouter()
-  const { user, logout } = useAuth()  // 获取用户信息和登出函数
-  const [message, setMessage] = useState('')
-  const [currentChatId, setCurrentChatId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [showSidebar, setShowSidebar] = useState(true)
-  const [chats, setChats] = useState<Chat[]>([])
-  const [greeting, setGreeting] = useState('')
-  const [mounted, setMounted] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const userMenuRef = useRef<HTMLDivElement>(null)
+  const router = useRouter();
+  const { user, logout } = useAuth();  // 获取用户信息和登出函数
+  const [message, setMessage] = useState('');
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [greeting, setGreeting] = useState('');
+  const [mounted, setMounted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const [image, setImage] = useState<string | null>(null);  // 添加图片状态
+  const fileInputRef = useRef<HTMLInputElement>(null);  // 添加文件输入引用
+  const [shouldShift, setShouldShift] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [bottomSpaceHeight, setBottomSpaceHeight] = useState(200);
+  const inputAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
+
+  // 优化滚动效果
+  const scrollToBottom = useCallback(() => {
+    const messageList = messagesContainerRef.current;
+    if (!messageList) return;
+
+    const scrollDistance = messageList.scrollHeight - messageList.clientHeight;
+    
+    // 使用 spring 动画
+    const start = messageList.scrollTop;
+    const change = scrollDistance - start;
+    const startTime = performance.now();
+    const duration = 500;
+
+    function easeOutSpring(t: number) {
+      const c4 = (2 * Math.PI) / 3;
+      return t === 0
+        ? 0
+        : t === 1
+        ? 1
+        : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
+    }
+
+    function animate(currentTime: number) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      messageList.scrollTop = start + change * easeOutSpring(progress);
+      
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+    }
+
+    requestAnimationFrame(animate);
+  }, []);
 
   // 获取当前聊天的消息
-  const currentChat = chats.find(chat => chat.id === currentChatId)
-  const currentMessages = currentChat?.messages || []
+  const currentChat = chats.find(chat => chat.id === currentChatId);
+  const currentMessages = currentChat?.messages || [];
 
-  // 添加消息容器的引用
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // 添加自动滚动函数
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  // 当消息更新时自动滚动
+  // 监听消息变化自动滚动
   useEffect(() => {
-    scrollToBottom()
-  }, [currentMessages, isLoading])
+    scrollToBottom();
+  }, [currentMessages, scrollToBottom]);
+
+  // 监听加载状态变化自动滚动
+  useEffect(() => {
+    if (isLoading) {
+      scrollToBottom();
+    }
+  }, [isLoading, scrollToBottom]);
 
   // 监听键盘事件，随机切换欢迎语
   useEffect(() => {
     const handleKeyPress = () => {
-      setGreeting(getRandomGreeting())
-    }
+      setGreeting(getRandomGreeting());
+    };
 
-    window.addEventListener('keydown', handleKeyPress)
+    window.addEventListener('keydown', handleKeyPress);
     // 初始化欢迎语
-    setGreeting(getRandomGreeting())
+    setGreeting(getRandomGreeting());
 
     // 清理事件监听
     return () => {
-      window.removeEventListener('keydown', handleKeyPress)
-    }
-  }, [])
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, []);
 
   // 创建新对话
   const createNewChat = () => {
@@ -118,46 +175,59 @@ export default function ChatPage() {
       title: '新对话',
       messages: [],
       lastUpdated: Date.now()
-    }
-    setChats(prev => [newChat, ...prev])
-    setCurrentChatId(newChat.id)
-  }
+    };
+    setChats(prev => [newChat, ...prev]);
+    setCurrentChatId(newChat.id);
+  };
 
-  // 更新对话标题
+  // 更新对话标
   const updateChatTitle = async (chatId: string, messages: Message[]) => {
-    const newTitle = await generateTitle(messages)
+    const newTitle = await generateTitle(messages);
     setChats(prev => prev.map(chat => {
       if (chat.id === chatId) {
-        return { ...chat, title: newTitle }
+        return { ...chat, title: newTitle };
       }
-      return chat
-    }))
-  }
+      return chat;
+    }));
+  };
+
+  // 处理图片上传
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImage(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!message.trim() || isLoading) return
+    e.preventDefault();
+    if ((!message.trim() && !image) || isLoading) return;
     
-    let chatId = currentChatId
+    let chatId = currentChatId;
     
     // 如果没有当前对话，创建一个新的
     if (!chatId) {
-      chatId = Date.now().toString()
+      chatId = Date.now().toString();
       const newChat: Chat = {
         id: chatId,
         title: '新对话',
         messages: [],
         lastUpdated: Date.now()
-      }
-      setChats(prev => [newChat, ...prev])
-      setCurrentChatId(chatId)
+      };
+      setChats(prev => [newChat, ...prev]);
+      setCurrentChatId(chatId);
     }
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: message.trim()
-    }
+      content: message.trim(),
+      image: image || undefined  // 修复类型错误
+    };
 
     // 更新聊天记录
     setChats(prev => prev.map(chat => {
@@ -166,43 +236,55 @@ export default function ChatPage() {
           ...chat,
           messages: [...chat.messages, userMessage],
           lastUpdated: Date.now()
-        }
+        };
       }
-      return chat
-    }))
+      return chat;
+    }));
 
-    setMessage('')
-    setIsLoading(true)
+    setMessage('');
+    setImage(null);  // 清除图片
+    setIsLoading(true);
 
     try {
-      const response = await generateResponse(message.trim())
+      const response = await fetch('/api/chat/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: message.trim(),
+          image
+        }),
+      });
+
+      const data = await response.json();
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: formatResponse(response || '哎呀，本喵突然有点累了，待会再回答你喵~')
-      }
+        content: formatResponse(data.content || '哎呀，本喵突然有点累了，待会再回答你喵~')
+      };
 
       // 更新聊天记录
       setChats(prev => prev.map(chat => {
         if (chat.id === chatId) {
-          const updatedMessages = [...chat.messages, aiMessage]
+          const updatedMessages = [...chat.messages, aiMessage];
           // 异步更新标题
-          updateChatTitle(chatId, updatedMessages)
+          updateChatTitle(chatId, updatedMessages);
           return {
             ...chat,
             messages: updatedMessages,
             lastUpdated: Date.now()
-          }
+          };
         }
-        return chat
-      }))
+        return chat;
+      }));
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: formatResponse('抱歉，本喵遇到了一点小问题，请稍后再试~')
-      }
+      };
       
       setChats(prev => prev.map(chat => {
         if (chat.id === chatId) {
@@ -210,38 +292,74 @@ export default function ChatPage() {
             ...chat,
             messages: [...chat.messages, errorMessage],
             lastUpdated: Date.now()
-          }
+          };
         }
-        return chat
-      }))
+        return chat;
+      }));
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // 处理点击空白处关闭菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setShowUserMenu(false)
+        setShowUserMenu(false);
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [])
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // 处理退出登录
   const handleLogout = async () => {
     try {
-      await logout()
-      router.push('/login')
+      await logout();
+      router.push('/login');
     } catch (error) {
-      console.error('Logout failed:', error)
+      console.error('Logout failed:', error);
     }
-  }
+  };
+
+  // 添加检查滚动位置的函数
+  const checkScrollPosition = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    
+    // 如果距离底部小于 200px，触发上移动画
+    if (distanceFromBottom < 200) {
+      setShouldShift(true);
+      setTimeout(() => setShouldShift(false), 500); // 动画结束后重置状态
+    }
+  }, []);
+
+  // 监听滚动事件
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', checkScrollPosition);
+    return () => container.removeEventListener('scroll', checkScrollPosition);
+  }, [checkScrollPosition]);
+
+  // 更新底部空间高度
+  useEffect(() => {
+    const updateBottomSpace = () => {
+      const inputHeight = inputAreaRef.current?.getBoundingClientRect().height || 0;
+      setBottomSpaceHeight(inputHeight + 20); // 从 100 改为 20，减小额外的缓冲空间
+    };
+
+    updateBottomSpace();
+    window.addEventListener('resize', updateBottomSpace);
+    return () => window.removeEventListener('resize', updateBottomSpace);
+  }, []);
 
   return (
     <div className="flex h-screen bg-[#1A1B1E] overflow-hidden">
@@ -332,7 +450,7 @@ export default function ChatPage() {
             )}
           </div>
           
-          {/* 个人信息头像和下拉菜单 */}
+          {/* 个人信息头像��下拉菜单 */}
           <div className="relative" ref={userMenuRef}>
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2 px-3 py-1.5 bg-[#1E2330] rounded-lg text-sm">
@@ -443,76 +561,110 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* 消息列表区域 - 添加底部内边距为输入框留出空间 */}
-        <div className="flex-1 overflow-y-auto pt-14 pb-20">
-          <div className="h-full">
-            {currentMessages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-4">
-                <div className="text-center space-y-4">
-                  <h2 className="text-4xl">
-                    {mounted && (
-                      <>
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
-                          {user?.nickname || 'lebonheur'}
-                        </span>
-                        <span className="text-pink-400">，你好</span>
-                      </>
-                    )}
-                  </h2>
-                  <p className="text-[#9AA0A6] transition-all duration-200 ease-in-out">
-                    {greeting || '让本喵猜猜...你一定是来找我解答人生难题的吧？不对吗？喵~'}
-                  </p>
-                </div>
+        {/* 消息列表区域 */}
+        <div 
+          ref={messagesContainerRef}
+          className="flex-1 overflow-y-auto pt-14 scroll-smooth"
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#404144 transparent',
+            scrollBehavior: 'smooth'
+          }}
+        >
+          {currentMessages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center p-4">
+              <div className="text-center space-y-4 animate-fade-in">
+                <h2 className="text-4xl">
+                  {mounted && (
+                    <>
+                      <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-pink-400">
+                        {user?.nickname || 'lebonheur'}
+                      </span>
+                      <span className="text-pink-400">，你好</span>
+                    </>
+                  )}
+                </h2>
+                <p className="text-[#9AA0A6] transition-all duration-200 ease-in-out">
+                  {greeting || '让本喵猜猜...你一定是来找我解答人生难题的吧？不对吗？喵~'}
+                </p>
               </div>
-            ) : (
-              <div className="max-w-3xl mx-auto px-4 py-4 space-y-6">
-                {currentMessages.map((msg) => (
-                  <div key={msg.id} className="group">
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0">
-                        {msg.role === 'assistant' ? (
-                          <span className="text-2xl">🐱</span>
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto px-4 py-2 space-y-4">
+              {currentMessages.map((msg, index) => (
+                <div 
+                  key={msg.id} 
+                  className="group transition-all duration-300 ease-out"
+                  style={{
+                    opacity: 0,
+                    transform: 'translateY(10px)',
+                    animation: `fadeSlideIn 0.3s ease-out ${index * 0.05}s forwards`
+                  }}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      {msg.role === 'assistant' ? (
+                        <span className="text-2xl"></span>
+                      ) : (
+                        user?.avatarUrl ? (
+                          <Image
+                            src={user.avatarUrl}
+                            alt="用户头像"
+                            width={32}
+                            height={32}
+                            className="rounded-full"
+                          />
                         ) : (
-                          user?.avatarUrl ? (
-                            <Image
-                              src={user.avatarUrl}
-                              alt="用户头像"
-                              width={32}
-                              height={32}
-                              className="rounded-full"
-                            />
-                          ) : (
-                            <span className="flex items-center justify-center w-8 h-8 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-sm">
-                              {user?.nickname?.[0] || '我'}
-                            </span>
-                          )
-                        )}
+                          <span className="flex items-center justify-center w-8 h-8 bg-[#9AA0A6] rounded-full text-[#1A1B1E] text-sm">
+                            {user?.nickname?.[0] || '我'}
+                          </span>
+                        )
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[13px] text-[#9AA0A6] mb-1">
+                        {msg.role === 'assistant' ? AI_CONFIG.name : (user?.nickname || '我')}
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="text-[14px] text-[#9AA0A6]">
-                          {msg.role === 'assistant' ? AI_CONFIG.name : (user?.nickname || '我')}
-                        </div>
-                        <div className="text-[#E3E3E3] text-[16px] leading-7">
-                          {msg.content.split('\n').map((paragraph, index) => (
-                            <div 
-                              key={index} 
-                              className={`${
-                                paragraph.startsWith('•') || paragraph.startsWith('・')
-                                  ? 'pl-4 mb-1.5'
-                                  : paragraph.trim() === '' 
-                                    ? 'h-3'
-                                    : 'mb-2'
-                              }`}
-                            >
-                              {paragraph}
-                            </div>
-                          ))}
-                        </div>
+                      <div className="text-[#E3E3E3] text-[15px] leading-[1.5]">
+                        {/* 如果有图片，先显示图片 */}
+                        {msg.image && (
+                          <div className="mb-2">
+                            <img
+                              src={msg.image}
+                              alt="用户上传的图片"
+                              className="max-w-sm rounded-lg"
+                            />
+                          </div>
+                        )}
+                        {/* 显示文本内容 */}
+                        {msg.content.split('\n').map((paragraph, index) => (
+                          <div 
+                            key={index} 
+                            className={`${
+                              paragraph.startsWith('•') || paragraph.startsWith('・')
+                                ? 'pl-4 mb-2'
+                                : paragraph.trim() === '' 
+                                  ? 'h-4'
+                                  : 'mb-2'
+                            }`}
+                          >
+                            {paragraph}
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                ))}
-                {isLoading && (
+                </div>
+              ))}
+              {isLoading && (
+                <div 
+                  className="group transition-all duration-300 ease-out"
+                  style={{
+                    opacity: 0,
+                    transform: 'translateY(10px)',
+                    animation: 'fadeSlideIn 0.2s ease-out forwards'
+                  }}
+                >
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
                       <span className="text-2xl animate-bounce">🐱</span>
@@ -525,47 +677,84 @@ export default function ChatPage() {
                       </div>
                     </div>
                   </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+              <div style={{ height: `${bottomSpaceHeight}px` }} />
+              <div ref={messagesEndRef} />
+            </div>
+          )}
         </div>
 
-        {/* 输入框 - 固定在底部 */}
-        <div className="fixed bottom-0 left-0 right-0 bg-[#1A1B1E] p-4">
-          <div className="max-w-3xl mx-auto">
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="flex items-center gap-3 bg-[#303134] rounded-full pl-4 pr-3 hover:bg-[#404144] transition-colors">
-                <button
-                  type="button"
-                  className="flex-shrink-0 text-gray-400"
-                  onClick={() => console.log('Upload image')}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M8.5 10C9.32843 10 10 9.32843 10 8.5C10 7.67157 9.32843 7 8.5 7C7.67157 7 7 7.67157 7 8.5C7 9.32843 7.67157 10 8.5 10Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M21 15L16 10L5 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+        {/* 输入框区域 */}
+        <div ref={inputAreaRef} className="fixed bottom-0 left-0 right-0">
+          <div 
+            className="h-[40px] bg-gradient-to-t from-[#1A1B1E] via-[#1A1B1E] to-transparent pointer-events-none"
+            style={{
+              transition: 'opacity 0.3s ease-in-out',
+              opacity: shouldShift ? 0.8 : 1
+            }}
+          />
+          <div 
+            className="bg-[#1A1B1E] pb-4"
+            style={{
+              transition: 'transform 0.3s ease-in-out',
+              transform: shouldShift ? 'translateY(-10px)' : 'translateY(0)'
+            }}
+          >
+            <div className="max-w-3xl mx-auto px-4">
+              <form onSubmit={handleSubmit} className="relative">
+                <div className="flex items-center gap-3 bg-[#303134] rounded-full pl-4 pr-3 hover:bg-[#404144] transition-colors">
+                  <button
+                    type="button"
+                    className="flex-shrink-0 text-gray-400 hover:text-white transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <BsImage size={20} />
+                  </button>
+                  <input
+                    type="text"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="问一问"
+                    className="flex-1 bg-transparent text-white py-3 focus:outline-none text-[16px]"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isLoading || (!message.trim() && !image)}
+                    className="flex-shrink-0 p-2 text-[#8E8EA0] hover:text-white disabled:opacity-40 disabled:hover:text-[#8E8EA0] transition-colors"
+                  >
+                    <BsArrowRightCircleFill size={20} />
+                  </button>
+                </div>
+                {/* 隐藏的文件输入 */}
                 <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="问一问"
-                  className="flex-1 bg-transparent text-white py-3 focus:outline-none text-[16px]"
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
                 />
-                <button
-                  type="submit"
-                  disabled={isLoading || !message.trim()}
-                  className="flex-shrink-0 p-2 text-[#8E8EA0] hover:text-white disabled:opacity-40 disabled:hover:text-[#8E8EA0] transition-colors"
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 4L3 11L10 14L13 21L20 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
-            </form>
+                {/* 图片预览 */}
+                {image && (
+                  <div className="absolute bottom-full mb-2 left-0">
+                    <div className="relative inline-block">
+                      <img
+                        src={image}
+                        alt="预览"
+                        className="h-20 rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
+                        onClick={() => setImage(null)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -578,5 +767,55 @@ export default function ChatPage() {
         />
       )}
     </div>
-  )
+  );
+}
+
+// 更新动画关键帧
+const styles = `
+  @keyframes fadeSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeSlideIn 0.5s ease-out forwards;
+  }
+
+  /* 优化滚动条样式 */
+  .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-thumb {
+    background-color: #404144;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background-color: #505154;
+  }
+
+  /* 添加平滑滚动 */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+`;
+
+// 将样式注入到页面
+if (typeof document !== 'undefined') {
+  const styleSheet = document.createElement('style');
+  styleSheet.textContent = styles;
+  document.head.appendChild(styleSheet);
 }
