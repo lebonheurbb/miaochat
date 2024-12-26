@@ -2,6 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.nova-gradient {
+  background: linear-gradient(45deg, #FF3366, #FF6B6B, #4ECDC4, #45B7D1, #2E86DE);
+  background-size: 300% 300%;
+  animation: gradientAnimation 10s ease infinite;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
 @keyframes aurora {
   0% {
     transform: rotate(0deg) scale(1);

@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 import { AuthProvider } from './contexts/AuthContext'
 
 export const metadata: Metadata = {
-  title: '喵哥 AI - 智能对话助手',
+  title: 'NovaAI - 智能对话助手',
   description: '基于先进的人工智能技术，为您提供智能、自然的对话体验。',
 }
 

@@ -29,7 +29,7 @@ export default function ChatPage() {
       
       if (lastMessage) {
         lastMessage.scrollIntoView({ block: 'end' });
-        // 额外的强制滚动
+        // 额��的强制滚动
         container.scrollTop = container.scrollHeight + 1000;
       }
     }
@@ -193,7 +193,7 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 space-y-1 overflow-hidden">
                     <div className="text-[14px] text-[#9AA0A6]">
-                      {message.role === 'assistant' ? 'Gemini' : (user?.email?.split('@')[0] || '我')}
+                      {message.role === 'assistant' ? 'NovaAI' : (user?.email?.split('@')[0] || '我')}
                     </div>
                     <div className="text-[#E3E3E3] text-[16px] leading-7 whitespace-pre-wrap">
                       {message.content.split('\n').map((paragraph, index) => (
@@ -224,7 +224,7 @@ export default function ChatPage() {
                     </div>
                   </div>
                   <div className="flex-1 space-y-1">
-                    <div className="text-[14px] text-[#9AA0A6]">Gemini</div>
+                    <div className="text-[14px] text-[#9AA0A6]">NovaAI</div>
                     <div className="text-[#9AA0A6] text-[16px] flex items-center space-x-2">
                       <span className="animate-pulse">思考中</span>
                       <span className="animate-pulse">...</span>

@@ -445,7 +445,7 @@ export default function ChatPage() {
       >
         <div className="flex flex-col h-full text-white">
           <div className="flex items-center p-4">
-            <span className="text-xl font-semibold">Gemini</span>
+            <span className="text-xl font-semibold nova-gradient">NovaAI</span>
             <span className="ml-2 text-sm text-gray-400">1.5 Flash</span>
           </div>
 

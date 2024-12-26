@@ -26,8 +26,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between px-4 py-4">
             <div className="flex items-center">
-              <span className="text-xl text-white">
-                Gemini
+              <span className="text-xl nova-gradient">
+                NovaAI
               </span>
             </div>
             {user ? (
@@ -77,8 +77,8 @@ export default function Home() {
               />
             </div>
 
-            <h1 className="text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
-              Gemini
+            <h1 className="text-5xl font-bold nova-gradient">
+              NovaAI
             </h1>
             <h2 className="text-3xl font-bold text-white">
               获取创意灵感，提升工作效率
