@@ -8,6 +8,13 @@
       "use": "@vercel/next"
     }
   ],
+  "routes": [
+    {
+      "src": "/api/gemini",
+      "methods": ["POST", "OPTIONS"],
+      "dest": "/api/gemini"
+    }
+  ],
   "env": {
     "NEXT_PUBLIC_VERCEL_ENV": "production"
   }
