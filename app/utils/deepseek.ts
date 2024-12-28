@@ -5,9 +5,9 @@ const client = new OpenAI({
   baseURL: 'https://api.deepseek.com/v3',
 });
 
-export async function generateResponse(prompt: string): Promise<string> {
-  if (!prompt || typeof prompt !== 'string') {
-    throw new Error('Prompt must be a non-empty string');
+export async function generateResponse(message: string): Promise<string> {
+  if (!message || typeof message !== 'string') {
+    throw new Error('Message must be a non-empty string');
   }
 
   try {
@@ -20,20 +20,20 @@ export async function generateResponse(prompt: string): Promise<string> {
         },
         { 
           role: "user", 
-          content: prompt 
+          content: message 
         }
       ],
       temperature: 0.7,
       max_tokens: 2048
     });
 
-    const content = completion.choices[0].message.content;
+    const content = completion.choices[0]?.message?.content;
     if (!content) {
       throw new Error('DeepSeek API returned empty response');
     }
     return content;
   } catch (error) {
     console.error('Error calling DeepSeek API:', error);
-    throw error;
+    throw new Error('Failed to generate response from DeepSeek API');
   }
 } 

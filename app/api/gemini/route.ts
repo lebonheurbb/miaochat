@@ -12,7 +12,8 @@ export async function POST(request: Request) {
   console.log('收到新的请求...');
   try {
     console.log('正在解析请求体...');
-    const { prompt } = await request.json() as { prompt: string };
+    const body = await request.json();
+    const prompt = body?.prompt;
     
     if (!prompt || typeof prompt !== 'string') {
       console.log('prompt为空或类型不正确，返回错误');
@@ -68,11 +69,17 @@ export async function POST(request: Request) {
     console.log('尝试使用 DeepSeek API 作为备选...');
     try {
       console.log('调用 DeepSeek API...');
-      const response = await generateResponse(prompt);
+      const response = await generateResponse(prompt as unknown as string);
       console.log('DeepSeek API 响应:', response);
       return NextResponse.json({ message: response });
     } catch (fallbackError) {
       console.error('DeepSeek API 错误:', fallbackError);
+      if (fallbackError instanceof Error) {
+        return NextResponse.json(
+          { error: `喵呜~ ${fallbackError.message}` },
+          { status: 500 }
+        );
+      }
       return NextResponse.json(
         { error: '喵呜~ 出了点小问题，让我休息一下再试试吧！' },
         { status: 500 }
