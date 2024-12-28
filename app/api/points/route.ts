@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/app/lib/db'
 import { cookies } from 'next/headers'
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 
 // 获取用户积分
 export async function GET(req: Request) {
@@ -50,8 +50,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: '用户不存在' }, { status: 404 })
     }
 
-    // 开始事务
-    const result = await prisma.$transaction(async (tx: PrismaClient) => {
+    // 开��事务
+    const result = await prisma.$transaction(async (tx) => {
       // 更新用户积分
       const updatedUser = await tx.user.update({
         where: { id: user.id },
