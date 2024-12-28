@@ -106,8 +106,6 @@ export default function ChatPage() {
     if (!messageList) return;
 
     const scrollDistance = messageList.scrollHeight - messageList.clientHeight;
-    
-    // 使用 spring 动画
     const start = messageList.scrollTop;
     const change = scrollDistance - start;
     const startTime = performance.now();
@@ -122,14 +120,15 @@ export default function ChatPage() {
         : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
     }
 
-    function animate(currentTime: number) {
-      const messageList = messagesContainerRef.current;
-      if (!messageList) return;
+    let lastMessageList = messageList;  // 保存初始的 messageList 引用
 
+    function animate(currentTime: number) {
+      if (lastMessageList !== messagesContainerRef.current) return;  // 如果引用变化了，停止动画
+      
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
-      messageList.scrollTop = start + change * easeOutSpring(progress);
+      lastMessageList.scrollTop = start + change * easeOutSpring(progress);
       
       if (progress < 1) {
         requestAnimationFrame(animate);
@@ -516,7 +515,7 @@ export default function ChatPage() {
 
       {/* 主聊天区域 */}
       <div className="flex-1 flex flex-col h-screen">
-        {/* 顶���导航栏 - 固定定位 */}
+        {/* 顶导航栏 - 固定定位 */}
         <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-2 sm:px-4 bg-[#1A1B1E] z-20">
           <div className="flex items-center">
             <button 
@@ -810,7 +809,7 @@ export default function ChatPage() {
                   accept="image/*"
                   onChange={handleImageUpload}
                 />
-                {/* 图���预览 */}
+                {/* 图片预览 */}
                 {image && (
                   <div className="absolute bottom-full mb-2 left-0">
                     <div className="relative inline-block">
