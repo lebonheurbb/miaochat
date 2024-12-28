@@ -71,6 +71,9 @@ export async function POST(request: Request) {
       const { generateResponse } = await import('@/app/utils/deepseek');
       console.log('调用 DeepSeek API...');
       const response = await generateResponse(prompt as string);
+      if (!response) {
+        throw new Error('DeepSeek API 返回为空');
+      }
       console.log('DeepSeek API 响应:', response);
       return NextResponse.json({ message: response });
     } catch (fallbackError) {

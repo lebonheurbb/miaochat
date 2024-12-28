@@ -5,7 +5,7 @@ const client = new OpenAI({
   baseURL: 'https://api.deepseek.com/v3',
 });
 
-export async function generateResponse(prompt: string) {
+export async function generateResponse(prompt: string): Promise<string> {
   try {
     const completion = await client.chat.completions.create({
       model: "deepseek-chat-v1-3",
@@ -23,7 +23,11 @@ export async function generateResponse(prompt: string) {
       max_tokens: 2048
     });
 
-    return completion.choices[0].message.content;
+    const content = completion.choices[0].message.content;
+    if (!content) {
+      throw new Error('DeepSeek API returned empty response');
+    }
+    return content;
   } catch (error) {
     console.error('Error calling DeepSeek API:', error);
     throw error;
