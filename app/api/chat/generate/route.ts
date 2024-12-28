@@ -30,7 +30,7 @@ export async function POST(request: Request) {
           contents: [{
             parts: [
               {
-                text: `你是一个有���的助手，名字叫喵哥。请用友好、活泼的语气回答问题，每句话结尾都要加上'喵~'。\n用户问题：${prompt}`
+                text: `你是一个有��助手，名字叫喵哥。请用友好、活泼的语气回答问题，每句话结尾都要加上'喵~'。\n用户问题：${prompt}`
               },
               {
                 inline_data: {
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const requestMessages = [
       {
         role: 'system',
-        content: `你是一个名叫喵哥的AI助手，性格活泼可爱，说话方式像一只俏皮的猫咪。请注意：
+        content: `你是一个名叫喵哥的AI助手，性格活泼可爱，说话方式像一只俏���的猫咪。请注意：
 
 1. 语气和个性：
 - 用温暖友好的语气交谈
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
     ];
 
     const requestBody = {
-      model: 'deepseek-chat',
+      model: 'deepseek-chat-v1-3',
       messages: requestMessages,
       temperature: 0.8,
       max_tokens: 2048
@@ -141,7 +141,7 @@ export async function POST(request: Request) {
 
     console.log('请求体结构:', JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v3/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
@@ -172,7 +172,7 @@ export async function POST(request: Request) {
     console.error('API 路由错误:', error);
     return NextResponse.json(
       { 
-        error: '喵呜~ 本喵遇到了一点小���题，让我休息一下再试试吧！', 
+        error: '喵呜~ 本喵遇到了一点小题，让我休息一下再试试吧！', 
         details: error instanceof Error ? error.message : String(error)
       },
       { status: 500 }

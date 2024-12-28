@@ -2,13 +2,13 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || 'sk-c5f13a32204648e4b6993db1d666fd57',
-  baseURL: 'https://api.deepseek.com/v1',
+  baseURL: 'https://api.deepseek.com/v3',
 });
 
 export async function generateResponse(prompt: string) {
   try {
     const completion = await client.chat.completions.create({
-      model: "deepseek-chat",
+      model: "deepseek-chat-v1-3",
       messages: [
         { 
           role: "system", 
