@@ -75,6 +75,18 @@ const messageVariants = {
   }
 };
 
+// 添加防抖函数
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const { user, logout } = useAuth();  // 获取用户信息和登出函数
@@ -105,7 +117,12 @@ export default function ChatPage() {
     const messageList = messagesContainerRef.current;
     if (!messageList) return;
 
-    const scrollDistance = messageList.scrollHeight - messageList.clientHeight;
+    // 添加一个检查，确保只在需要滚动时才滚动
+    const { scrollTop, scrollHeight, clientHeight } = messageList;
+    const isAtBottom = Math.abs(scrollHeight - clientHeight - scrollTop) < 10;
+    if (isAtBottom) return;  // 如果已经在底部，不需要滚动
+
+    const scrollDistance = scrollHeight - clientHeight;
     const start = messageList.scrollTop;
     const change = scrollDistance - start;
     const startTime = performance.now();
@@ -120,10 +137,14 @@ export default function ChatPage() {
         : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
     }
 
-    let lastMessageList = messageList;  // 保存初始的 messageList 引用
+    let lastMessageList = messageList;
+    let animationFrame: number;
 
     function animate(currentTime: number) {
-      if (lastMessageList !== messagesContainerRef.current) return;  // 如果引用变化了，停止动画
+      if (lastMessageList !== messagesContainerRef.current) {
+        cancelAnimationFrame(animationFrame);
+        return;
+      }
       
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
@@ -131,12 +152,20 @@ export default function ChatPage() {
       lastMessageList.scrollTop = start + change * easeOutSpring(progress);
       
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        animationFrame = requestAnimationFrame(animate);
       }
     }
 
-    requestAnimationFrame(animate);
+    animationFrame = requestAnimationFrame(animate);
   }, []);
+
+  // 添加防抖处理
+  const debouncedScrollToBottom = useCallback(
+    debounce(() => {
+      scrollToBottom();
+    }, 100),
+    [scrollToBottom]
+  );
 
   // 获取当前聊天的消息
   const currentChat = chats.find(chat => chat.id === currentChatId);
@@ -203,9 +232,25 @@ export default function ChatPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // 添加文件大小限制
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      alert('图片大小不能超过 5MB');
+      return;
+    }
+
+    // 添加文件类型检查
+    if (!file.type.startsWith('image/')) {
+      alert('请上传图片文件');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onloadend = () => {
       setImage(reader.result as string);
+    };
+    reader.onerror = () => {
+      alert('图片读取失败，请重试');
     };
     reader.readAsDataURL(file);
   };
@@ -216,43 +261,11 @@ export default function ChatPage() {
     
     let chatId = currentChatId;
     
-    // 如果没有当前对话，创建一个新的
-    if (!chatId) {
-      chatId = Date.now().toString();
-      const newChat: Chat = {
-        id: chatId,
-        title: '新对话',
-        messages: [],
-        lastUpdated: Date.now()
-      };
-      setChats(prev => [newChat, ...prev]);
-      setCurrentChatId(chatId);
-    }
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: message.trim(),
-      image: image || undefined  // 修复类型错误
-    };
-
-    // 更新聊天记录
-    setChats(prev => prev.map(chat => {
-      if (chat.id === chatId) {
-        return {
-          ...chat,
-          messages: [...chat.messages, userMessage],
-          lastUpdated: Date.now()
-        };
-      }
-      return chat;
-    }));
-
-    setMessage('');
-    setImage(null);  // 清除图片
-    setIsLoading(true);
-
     try {
+      // 添加超时处理
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒超时
+
       const response = await fetch('/api/chat/generate', {
         method: 'POST',
         headers: {
@@ -263,7 +276,14 @@ export default function ChatPage() {
           image,
           messages: currentChat?.messages || []
         }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
       const data = await response.json();
       const aiMessage: Message = {
@@ -272,11 +292,9 @@ export default function ChatPage() {
         content: formatResponse(data.message || '哎呀，本喵突然有点累了，待会再回答你喵~')
       };
 
-      // 更新聊天记录
       setChats(prev => prev.map(chat => {
         if (chat.id === chatId) {
           const updatedMessages = [...chat.messages, aiMessage];
-          // 异步更新标题
           updateChatTitle(chatId, updatedMessages);
           return {
             ...chat,
@@ -288,17 +306,18 @@ export default function ChatPage() {
       }));
     } catch (error) {
       console.error('Error:', error);
-      const errorMessage: Message = {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      const errorResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: formatResponse('抱歉，本喵遇到了一点小问题，请稍后再试~')
+        content: formatResponse(`抱歉，本喵遇到了一点小问题 (${errorMessage})，请稍后再试~`)
       };
       
       setChats(prev => prev.map(chat => {
         if (chat.id === chatId) {
           return {
             ...chat,
-            messages: [...chat.messages, errorMessage],
+            messages: [...chat.messages, errorResponse],
             lastUpdated: Date.now()
           };
         }
@@ -309,7 +328,7 @@ export default function ChatPage() {
     }
   };
 
-  // 处理点击空白处关闭菜单
+  // 处理点击空白处关���菜单
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       // 如果点击的是菜单按钮本身，不处理（让按钮的点击事件处理）
@@ -413,13 +432,24 @@ export default function ChatPage() {
     
     if (savedChats) {
       try {
-        setChats(JSON.parse(savedChats));
+        const parsedChats = JSON.parse(savedChats);
+        // 添加数据验证
+        if (Array.isArray(parsedChats) && parsedChats.every(chat => 
+          chat && typeof chat === 'object' && 
+          'id' in chat && 'title' in chat && 'messages' in chat
+        )) {
+          setChats(parsedChats);
+        } else {
+          console.error('Invalid chat data structure');
+          localStorage.removeItem('chats');  // 清除无效数据
+        }
       } catch (error) {
         console.error('Failed to parse saved chats:', error);
+        localStorage.removeItem('chats');  // 清除损坏的数据
       }
     }
     
-    if (savedCurrentChatId) {
+    if (savedCurrentChatId && typeof savedCurrentChatId === 'string') {
       setCurrentChatId(savedCurrentChatId);
     }
   }, []);
