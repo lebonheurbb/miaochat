@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import fetch from 'node-fetch'
+import { generateResponse } from '@/app/utils/deepseek'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyAmqhgZy28wBjtSujMM8fHc4dLEL4ivxhE';
 // 使用Cloudflare Worker URL
@@ -11,12 +12,10 @@ export async function POST(request: Request) {
   console.log('收到新的请求...');
   try {
     console.log('正在解析请求体...');
-    const clonedRequest = request.clone();
-    const { prompt } = await clonedRequest.json() as { prompt: string };
-    console.log('收到的prompt:', prompt);
+    const { prompt } = await request.json() as { prompt: string };
     
-    if (!prompt) {
-      console.log('prompt为空，返回错误');
+    if (!prompt || typeof prompt !== 'string') {
+      console.log('prompt为空或类型不正确，返回错误');
       return NextResponse.json(
         { error: '消息不能为空喵~' },
         { status: 400 }
@@ -68,12 +67,8 @@ export async function POST(request: Request) {
     console.error('Gemini API 错误:', error);
     console.log('尝试使用 DeepSeek API 作为备选...');
     try {
-      const { generateResponse } = await import('@/app/utils/deepseek');
       console.log('调用 DeepSeek API...');
-      const response = await generateResponse(prompt as string);
-      if (!response) {
-        throw new Error('DeepSeek API 返回为空');
-      }
+      const response = await generateResponse(prompt);
       console.log('DeepSeek API 响应:', response);
       return NextResponse.json({ message: response });
     } catch (fallbackError) {

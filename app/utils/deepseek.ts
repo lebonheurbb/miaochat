@@ -6,6 +6,10 @@ const client = new OpenAI({
 });
 
 export async function generateResponse(prompt: string): Promise<string> {
+  if (!prompt || typeof prompt !== 'string') {
+    throw new Error('Prompt must be a non-empty string');
+  }
+
   try {
     const completion = await client.chat.completions.create({
       model: "deepseek-chat-v1-3",
