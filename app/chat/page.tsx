@@ -33,7 +33,7 @@ const generateTitle = async (messages: Message[]): Promise<string> => {
   
   // 获取最近的几条消息用于生成标题
   const recentMessages = messages.slice(-3);
-  const prompt = `请5�����以内总结这段对话的主题:\n${recentMessages.map(m => m.content).join('\n')}`;
+  const prompt = `请用5个字以内总结这段对话的主题:\n${recentMessages.map(m => m.content).join('\n')}`;
   
   try {
     const title = await generateResponse(prompt);
@@ -123,6 +123,9 @@ export default function ChatPage() {
     }
 
     function animate(currentTime: number) {
+      const messageList = messagesContainerRef.current;
+      if (!messageList) return;
+
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
       
@@ -259,7 +262,7 @@ export default function ChatPage() {
         body: JSON.stringify({
           prompt: message.trim(),
           image,
-          messages: currentChat?.messages || []  // 添加历史消息
+          messages: currentChat?.messages || []
         }),
       });
 
@@ -289,7 +292,7 @@ export default function ChatPage() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: formatResponse('抱歉，本��遇到了一点小问题，请稍后再试~')
+        content: formatResponse('抱歉，本喵遇到了一点小问题，请稍后再试~')
       };
       
       setChats(prev => prev.map(chat => {
@@ -370,7 +373,7 @@ export default function ChatPage() {
   useEffect(() => {
     const updateBottomSpace = () => {
       const inputHeight = inputAreaRef.current?.getBoundingClientRect().height || 0;
-      setBottomSpaceHeight(inputHeight + 20); // 从 100 改为 20���减小额外的缓冲空间
+      setBottomSpaceHeight(inputHeight + 20); // 从 100 改为 20减小额外的缓冲空间
     };
 
     updateBottomSpace();
@@ -513,7 +516,7 @@ export default function ChatPage() {
 
       {/* 主聊天区域 */}
       <div className="flex-1 flex flex-col h-screen">
-        {/* 顶部导航栏 - 固定定位 */}
+        {/* 顶���导航栏 - 固定定位 */}
         <div className="fixed top-0 left-0 right-0 flex items-center justify-between h-14 px-2 sm:px-4 bg-[#1A1B1E] z-20">
           <div className="flex items-center">
             <button 
@@ -807,7 +810,7 @@ export default function ChatPage() {
                   accept="image/*"
                   onChange={handleImageUpload}
                 />
-                {/* 图片预览 */}
+                {/* 图���预览 */}
                 {image && (
                   <div className="absolute bottom-full mb-2 left-0">
                     <div className="relative inline-block">
