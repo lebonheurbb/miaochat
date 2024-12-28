@@ -7,10 +7,11 @@ type ChatRequest = {
 };
 
 export async function POST(request: Request) {
-  console.log('收到新的请求...');
+  console.log('收到新的请求...', new Date().toISOString());
   try {
     console.log('正在解析请求体...');
     const { prompt } = await request.json() as ChatRequest;
+    console.log('收到的 prompt:', prompt);
     
     if (!prompt || typeof prompt !== 'string') {
       console.log('prompt为空或类型不正确，返回错误');
@@ -44,11 +45,14 @@ export async function POST(request: Request) {
         body: JSON.stringify(requestBody)
       });
 
+      console.log('Gemini API 响应状态:', response.status);
       if (!response.ok) {
         throw new Error(`API请求失败，状态码 ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Gemini API 响应数据:', JSON.stringify(data, null, 2));
+      
       if (!data.predictions || data.predictions.length === 0) {
         throw new Error('API没有返回答案');
       }
@@ -60,6 +64,8 @@ export async function POST(request: Request) {
       console.log('尝试使用 DeepSeek API 作为备选...');
       
       const deepseekResponse = await generateResponse(prompt);
+      console.log('DeepSeek API 响应:', deepseekResponse);
+      
       if (!deepseekResponse) {
         throw new Error('DeepSeek API 返回为空');
       }
