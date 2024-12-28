@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/app/lib/db'
 import { cookies } from 'next/headers'
+import { PrismaClient } from '@prisma/client'
 
 // 获取用户积分
 export async function GET(req: Request) {
@@ -39,7 +40,7 @@ export async function POST(req: Request) {
     }
 
     const userData = JSON.parse(userCookie.value)
-    const { amount, type, description } = await req.json()
+    const { amount, description } = await req.json()
 
     const user = await prisma.user.findUnique({
       where: { email: userData.email }
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
     }
 
     // 开始事务
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: PrismaClient) => {
       // 更新用户积分
       const updatedUser = await tx.user.update({
         where: { id: user.id },
@@ -61,9 +62,8 @@ export async function POST(req: Request) {
       await tx.pointsHistory.create({
         data: {
           userId: user.id,
-          amount,
-          type,
-          description
+          points: amount,
+          reason: description
         }
       })
 
