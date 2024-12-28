@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 
 const client = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || 'sk-c5f13a32204648e4b6993db1d666fd57',
-  baseURL: 'https://api.deepseek.com/v3',
+  baseURL: 'https://api.deepseek.com/v1',
 });
 
 export async function generateResponse(message: string): Promise<string> {
@@ -12,7 +12,7 @@ export async function generateResponse(message: string): Promise<string> {
 
   try {
     const completion = await client.chat.completions.create({
-      model: "deepseek-chat-v1-3",
+      model: "deepseek-chat",
       messages: [
         { 
           role: "system", 
